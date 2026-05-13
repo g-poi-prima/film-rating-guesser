@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User } from '../types';
+import type { User, RandomMovie, GuessResult, Game, RankingEntry } from '../types';
 
 const api = axios.create({ baseURL: '/api' });
 
@@ -8,29 +8,15 @@ api.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+api.interceptors.response.use((res) => res, (err) => {
+  if (err.response?.status === 401) { localStorage.removeItem('token'); window.location.href = '/login'; }
+  return Promise.reject(err);
+});
 
-api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(err);
-  }
-);
-
-export async function login(username: string, password: string): Promise<{ user: User; token: string }> {
-  const { data } = await api.post('/auth/login', { username, password });
-  return data;
-}
-
-export async function register(username: string, email: string, password: string): Promise<{ user: User; token: string }> {
-  const { data } = await api.post('/auth/register', { username, email, password });
-  return data;
-}
-
-export async function getMe(): Promise<User> {
-  const { data } = await api.get('/auth/me');
-  return data;
-}
+export async function login(u: string, p: string): Promise<{ user: User; token: string }> { const { data } = await api.post('/auth/login', { username: u, password: p }); return data; }
+export async function register(u: string, e: string, p: string): Promise<{ user: User; token: string }> { const { data } = await api.post('/auth/register', { username: u, email: e, password: p }); return data; }
+export async function getMe(): Promise<User> { const { data } = await api.get('/auth/me'); return data; }
+export async function getRandomMovie(): Promise<RandomMovie> { const { data } = await api.get('/games/random'); return data; }
+export async function submitGuess(params: { movieId: number; movieTitle: string; moviePoster?: string | null; movieOverview?: string | null; userRating: number; realRating: number }): Promise<GuessResult> { const { data } = await api.post('/games/guess', params); return data; }
+export async function getHistory(page = 1): Promise<{ games: Game[]; total: number; page: number; totalPages: number }> { const { data } = await api.get(`/games/history?page=${page}`); return data; }
+export async function getRanking(): Promise<RankingEntry[]> { const { data } = await api.get('/ranking'); return data; }
