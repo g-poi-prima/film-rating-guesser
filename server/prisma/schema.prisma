@@ -20,4 +20,21 @@ model User {
   avatar    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  games Game[]
+}
+
+model Game {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  movieId       Int
+  movieTitle    String
+  moviePoster   String?
+  movieOverview String?
+  userRating    Float
+  realRating    Float
+  score         Int
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

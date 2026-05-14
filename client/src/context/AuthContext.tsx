@@ -18,7 +18,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      getMe().then(setUser).catch(() => { localStorage.removeItem('token'); }).finally(() => setLoading(false));
+      getMe()
+        .then(setUser)
+        .catch(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        })
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
@@ -26,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

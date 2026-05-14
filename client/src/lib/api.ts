@@ -1,11 +1,15 @@
 import axios from 'axios';
-import type { User } from '../types';
+import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser } from '../types';
 
-const api = axios.create({ baseURL: '/api' });
+const api = axios.create({
+  baseURL: '/api',
+});
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -14,6 +18,7 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(err);
@@ -33,4 +38,60 @@ export async function register(username: string, email: string, password: string
 export async function getMe(): Promise<User> {
   const { data } = await api.get('/auth/me');
   return data;
+}
+
+export async function getRandomMovie(): Promise<RandomMovie> {
+  const { data } = await api.get('/games/random');
+  return data;
+}
+
+export async function submitGuess(params: {
+  movieId: number;
+  movieTitle: string;
+  moviePoster?: string | null;
+  movieOverview?: string | null;
+  userRating: number;
+  realRating: number;
+}): Promise<GuessResult> {
+  const { data } = await api.post('/games/guess', params);
+  return data;
+}
+
+export async function getHistory(page = 1): Promise<{ games: Game[]; total: number; page: number; totalPages: number }> {
+  const { data } = await api.get(`/games/history?page=${page}`);
+  return data;
+}
+
+export async function getRanking(): Promise<RankingEntry[]> {
+  const { data } = await api.get('/ranking');
+  return data;
+}
+
+export async function getProfile(): Promise<User & { totalScore: number; gamesPlayed: number }> {
+  const { data } = await api.get('/profile');
+  return data;
+}
+
+export async function updateProfile(params: {
+  username?: string;
+  email?: string;
+  password?: string;
+  avatar?: string;
+}): Promise<User> {
+  const { data } = await api.put('/profile', params);
+  return data;
+}
+
+export async function getAdminUsers(): Promise<AdminUser[]> {
+  const { data } = await api.get('/admin/users');
+  return data;
+}
+
+export async function updateUserRole(id: number, role: 'USER' | 'ADMIN'): Promise<User> {
+  const { data } = await api.put(`/admin/users/${id}/role`, { role });
+  return data;
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  await api.delete(`/admin/users/${id}`);
 }
