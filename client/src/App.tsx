@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PlayPage from './pages/PlayPage';
 import RankingPage from './pages/RankingPage';
+import HistoryPage from './pages/HistoryPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/" element={<ProtectedRoute><PlayPage /></ProtectedRoute>} />
             <Route path="/ranking" element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           </Routes>
         </main>
       </BrowserRouter>
