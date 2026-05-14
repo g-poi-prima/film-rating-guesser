@@ -18,6 +18,7 @@
     "experimentalDecorators": true,
     "noUncheckedIndexedAccess": true
   },
+  "include": ["src"],
   "ts-node": {
     "require": ["tsconfig-paths/register"]
   }
