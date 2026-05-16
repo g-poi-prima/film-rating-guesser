@@ -1,2 +1,1 @@
-import { getEnv } from "@/utils/index";
-export const PORT = parseInt(getEnv("PORT"));
+export const PORT = parseInt(process.env.PORT || "3000");

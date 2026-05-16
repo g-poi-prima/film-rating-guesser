@@ -4,32 +4,35 @@ import prisma from "@/lib/prisma";
 const router = Router();
 
 router.get("/", async (_req, res) => {
-  const rankings = await prisma.user.findMany({
-    select: {
-      id: true,
-      username: true,
-      avatar: true,
-      _count: { select: { games: true } },
-      games: {
-        select: { score: true },
-      },
-    },
+  const stats = await prisma.game.groupBy({
+    by: ["userId"],
+    _sum: { score: true },
+    _count: { id: true },
+    _avg: { score: true },
+    orderBy: { _sum: { score: "desc" } },
   });
 
-  const data = rankings
-    .map((u) => {
-      const totalScore = u.games.reduce((sum, g) => sum + g.score, 0);
+  const userIds = stats.map((s) => s.userId);
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, username: true, avatar: true },
+  });
+
+  const userMap = new Map(users.map((u) => [u.id, u]));
+
+  const data = stats
+    .filter((s) => s._count.id > 0)
+    .map((s) => {
+      const user = userMap.get(s.userId);
       return {
-        id: u.id,
-        username: u.username,
-        avatar: u.avatar,
-        gamesPlayed: u._count.games,
-        totalScore,
-        averageScore: u._count.games > 0 ? Math.round(totalScore / u._count.games) : 0,
+        id: s.userId,
+        username: user?.username ?? "Unknown",
+        avatar: user?.avatar ?? null,
+        gamesPlayed: s._count.id,
+        totalScore: s._sum.score ?? 0,
+        averageScore: Math.round(s._avg.score ?? 0),
       };
-    })
-    .filter((u) => u.gamesPlayed > 0)
-    .sort((a, b) => b.totalScore - a.totalScore);
+    });
 
   res.json(data);
 });

@@ -38,7 +38,6 @@ export default function PlayPage() {
         moviePoster: movie.poster,
         movieOverview: movie.overview,
         userRating,
-        realRating: 0,
       });
       setResult(data);
       setShowResult(true);

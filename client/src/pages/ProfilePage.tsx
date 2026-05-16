@@ -99,7 +99,7 @@ export default function ProfilePage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-sm font-medium mb-1">
                 <User className="w-4 h-4" /> Username
               </label>
               <input
@@ -111,7 +111,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-sm font-medium mb-1">
                 <Mail className="w-4 h-4" /> Email
               </label>
               <input
@@ -123,7 +123,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-sm font-medium mb-1">
                 <Key className="w-4 h-4" /> Nuova Password (lascia vuoto per non cambiare)
               </label>
               <input

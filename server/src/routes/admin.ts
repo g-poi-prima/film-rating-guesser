@@ -51,8 +51,10 @@ router.delete("/users/:id", async (req: AuthRequest, res) => {
     return;
   }
 
-  await prisma.game.deleteMany({ where: { userId: id } });
-  await prisma.user.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.game.deleteMany({ where: { userId: id } }),
+    prisma.user.delete({ where: { id } }),
+  ]);
 
   res.json({ message: "Utente eliminato" });
 });
