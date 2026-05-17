@@ -16,4 +16,5 @@ yarn-debug.log*
 yarn-error.log*
 
 coverage/
-prisma/migrations/
+
+.claude/
