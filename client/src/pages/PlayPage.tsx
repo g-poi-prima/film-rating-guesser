@@ -100,11 +100,13 @@ export default function PlayPage() {
       {movie && !showResult && !loading && (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
           {movie.poster && (
-            <img
-              src={movie.poster}
-              alt={movie.title}
-              className="w-full h-80 object-cover"
-            />
+            <div className="flex justify-center bg-gray-100 dark:bg-gray-800">
+              <img
+                src={movie.poster}
+                alt={movie.title}
+                className="h-96 w-auto object-contain"
+              />
+            </div>
           )}
           <div className="p-6 space-y-4">
             <h2 className="text-2xl font-bold">{movie.title}</h2>
