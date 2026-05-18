@@ -5,7 +5,8 @@ const TMDB_BASE = "https://api.themoviedb.org/3";
 
 const tmdb = axios.create({
   baseURL: TMDB_BASE,
-  params: { api_key: getEnv("TMDB_API_KEY"), language: "it-IT" },
+  params: { language: "it-IT" },
+  headers: { Authorization: `Bearer ${getEnv("TMDB_API_KEY")}` },
 });
 
 interface TMDBMovie {

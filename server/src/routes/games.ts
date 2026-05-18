@@ -1,7 +1,7 @@
 import { Router } from "express";
 import prisma from "@/lib/prisma";
 import { authenticate } from "@/middleware/auth";
-import { getRandomMovie } from "@/lib/tmdb";
+import { getRandomMovie, getMovieById } from "@/lib/tmdb";
 import type { AuthRequest } from "@/middleware/auth";
 
 const router = Router();
@@ -23,13 +23,20 @@ router.get("/random", async (_req: AuthRequest, res) => {
 });
 
 router.post("/guess", async (req: AuthRequest, res) => {
-  const { movieId, movieTitle, moviePoster, movieOverview, userRating, realRating } = req.body;
+  const { movieId, movieTitle, moviePoster, movieOverview, userRating } = req.body;
 
-  if (userRating == null || realRating == null || !movieId) {
+  if (userRating == null || !movieId) {
     res.status(400).json({ error: "Dati incompleti" });
     return;
   }
 
+  const movieData = await getMovieById(movieId);
+  if (!movieData) {
+    res.status(404).json({ error: "Film non trovato" });
+    return;
+  }
+
+  const realRating = movieData.rating;
   const diff = Math.abs(userRating - realRating);
 
   let score: number;

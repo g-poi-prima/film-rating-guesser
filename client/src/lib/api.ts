@@ -51,7 +51,6 @@ export async function submitGuess(params: {
   moviePoster?: string | null;
   movieOverview?: string | null;
   userRating: number;
-  realRating: number;
 }): Promise<GuessResult> {
   const { data } = await api.post('/games/guess', params);
   return data;

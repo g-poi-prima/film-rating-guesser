@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { getRandomMovie, submitGuess } from '../lib/api';
 import type { RandomMovie, GuessResult } from '../types';
-import { Film, Star, RefreshCw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Film, Star, RefreshCw, PlayCircle } from 'lucide-react';
 
 export default function PlayPage() {
   const [movie, setMovie] = useState<RandomMovie | null>(null);
   const [loading, setLoading] = useState(false);
-  const [userRating, setUserRating] = useState<number>(5);
+  const [userRating, setUserRating] = useState(5);
   const [result, setResult] = useState<GuessResult | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState('');
@@ -18,8 +18,7 @@ export default function PlayPage() {
     setShowResult(false);
     setUserRating(5);
     try {
-      const data = await getRandomMovie();
-      setMovie(data);
+      setMovie(await getRandomMovie());
     } catch {
       setError('Errore nel caricamento del film. Riprova.');
     } finally {
@@ -38,150 +37,181 @@ export default function PlayPage() {
         moviePoster: movie.poster,
         movieOverview: movie.overview,
         userRating,
-        realRating: 0,
       });
       setResult(data);
       setShowResult(true);
     } catch {
-      setError('Errore nell\'invio del voto. Riprova.');
+      setError("Errore nell'invio del voto. Riprova.");
     } finally {
       setLoading(false);
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-500';
-    if (score >= 60) return 'text-yellow-500';
-    if (score >= 40) return 'text-orange-500';
-    return 'text-red-500';
-  };
+  const scoreColor = (s: number) =>
+    s >= 80 ? 'text-green-500' : s >= 60 ? 'text-yellow-500' : s >= 40 ? 'text-orange-500' : 'text-red-500';
 
-  const getDiffIcon = (diff: number) => {
-    if (diff <= 0.5) return <TrendingUp className="w-6 h-6 text-green-500" />;
-    if (diff <= 2) return <Minus className="w-6 h-6 text-yellow-500" />;
-    return <TrendingDown className="w-6 h-6 text-red-500" />;
-  };
+  const scoreBorder = (s: number) =>
+    s >= 80
+      ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+      : s >= 60
+      ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
+      : s >= 40
+      ? 'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20'
+      : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20';
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
-          <Film className="w-8 h-8 text-primary" />
-          Indovina il Rating!
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Film className="w-6 h-6 text-primary" />
+          Indovina il Rating
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Dai un voto al film e scopri quanto sei vicino al rating reale
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Guarda il film e indovina il suo voto su TMDB
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg mb-4">
+        <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 text-red-600 dark:text-red-400 text-sm p-3 rounded-xl">
           {error}
         </div>
       )}
 
+      {/* Start screen */}
       {!movie && !loading && (
-        <div className="text-center py-12">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-16 text-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Film className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold mb-2">Pronto a giocare?</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">
+            Ti mostreremo un film casuale: dai un voto e scopri quanto sei vicino al rating reale
+          </p>
           <button
             onClick={fetchMovie}
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium px-6 py-3 rounded-lg transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors"
           >
-            <Film className="w-5 h-5" />
-            Inizia a giocare!
+            <PlayCircle className="w-5 h-5" />
+            Inizia
           </button>
         </div>
       )}
 
-      {loading && !result && (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+      {/* Loading */}
+      {loading && !showResult && (
+        <div className="flex justify-center py-24">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
         </div>
       )}
 
+      {/* Movie card */}
       {movie && !showResult && !loading && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
-          {movie.poster && (
-            <img
-              src={movie.poster}
-              alt={movie.title}
-              className="w-full h-80 object-cover"
-            />
-          )}
-          <div className="p-6 space-y-4">
-            <h2 className="text-2xl font-bold">{movie.title}</h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-              {movie.overview}
-            </p>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+          <div className="flex flex-col md:flex-row">
+            {/* Poster */}
+            <div className="md:w-64 lg:w-72 flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+              {movie.poster ? (
+                <img
+                  src={movie.poster}
+                  alt={movie.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-64 md:h-full flex items-center justify-center text-gray-300 dark:text-gray-600">
+                  <Film className="w-16 h-16" />
+                </div>
+              )}
+            </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Il tuo voto: <span className="text-primary font-bold">{userRating}</span>/10
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.5"
-                value={userRating}
-                onChange={(e) => setUserRating(parseFloat(e.target.value))}
-                className="w-full accent-primary"
-              />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>0</span>
-                <span>5</span>
-                <span>10</span>
+            {/* Info + rating */}
+            <div className="flex-1 p-6 flex flex-col">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold leading-snug mb-3">{movie.title}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-6">
+                  {movie.overview}
+                </p>
+              </div>
+
+              <div className="mt-8 space-y-5">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Il tuo voto</span>
+                    <span className="text-3xl font-black text-primary tabular-nums">{userRating}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="0.5"
+                    value={userRating}
+                    onChange={(e) => setUserRating(parseFloat(e.target.value))}
+                    className="w-full accent-primary cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1.5 px-0.5">
+                    <span>0</span>
+                    <span>5</span>
+                    <span>10</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGuess}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Star className="w-4 h-4" />
+                  Conferma voto
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={handleGuess}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
-            >
-              <Star className="w-5 h-5" />
-              {loading ? 'Calcolo in corso...' : 'Conferma voto!'}
-            </button>
           </div>
         </div>
       )}
 
+      {/* Result */}
       {showResult && result && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 space-y-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">{movie?.title}</h2>
-            <div className="flex items-center justify-center gap-2 text-lg">
-              {getDiffIcon(result.diff)}
-              <span className="font-semibold">
-                Differenza: {result.diff.toFixed(1)} punti
-              </span>
-            </div>
+        <div className="space-y-4">
+          {/* Score */}
+          <div className={`rounded-2xl border p-8 text-center ${scoreBorder(result.score)}`}>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Punteggio ottenuto</p>
+            <p className={`text-7xl font-black tabular-nums ${scoreColor(result.score)}`}>{result.score}</p>
+            <p className="text-sm text-gray-400 mt-1">/ 100 punti</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Il tuo voto</p>
-              <p className="text-3xl font-bold text-primary">{result.game.userRating}</p>
-            </div>
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Voto reale</p>
-              <p className="text-3xl font-bold text-secondary">{result.realRating.toFixed(1)}</p>
+          {/* Comparison */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+            <div className="flex flex-col md:flex-row">
+              {movie?.poster && (
+                <div className="md:w-40 flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                  <img src={movie.poster} alt={movie?.title} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-1 p-6">
+                <h2 className="font-bold text-lg mb-4">{movie?.title}</h2>
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <p className="text-xs text-gray-400 mb-1">Il tuo voto</p>
+                    <p className="text-2xl font-bold text-primary">{result.game.userRating}</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <p className="text-xs text-gray-400 mb-1">Differenza</p>
+                    <p className="text-2xl font-bold">{result.diff.toFixed(1)}</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <p className="text-xs text-gray-400 mb-1">Voto reale</p>
+                    <p className="text-2xl font-bold text-secondary">{result.realRating.toFixed(1)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={fetchMovie}
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-xl transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Prossimo film
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Punteggio ottenuto</p>
-            <p className={`text-5xl font-bold ${getScoreColor(result.score)}`}>
-              {result.score}
-            </p>
-          </div>
-
-          <button
-            onClick={fetchMovie}
-            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-lg transition-colors"
-          >
-            <RefreshCw className="w-5 h-5" />
-            Prossimo film
-          </button>
         </div>
       )}
     </div>
