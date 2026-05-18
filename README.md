@@ -17,10 +17,10 @@ A full-stack web app where you guess a movie's real rating, score points based o
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, Vite, Tailwind CSS v4, React Router v7, Axios |
-| Backend | Express, TypeScript, Prisma ORM |
+| Backend | Express, TypeScript, Prisma ORM 7 |
 | Database | PostgreSQL |
 | Auth | JWT (7-day tokens, bcryptjs hashing) |
-| Movie data | TMDB API |
+| Movie data | TMDB API (Bearer token auth) |
 
 ## Project Structure
 
@@ -36,9 +36,10 @@ film-rating-guessr/
 │       └── types/            # Shared TypeScript types
 └── server/                   # Express + Prisma backend
     ├── prisma/
-    │   └── schema.prisma
+    │   ├── schema.prisma
+    │   └── migrations/
     └── src/
-        ├── lib/              # prisma.ts, tmdb.ts
+        ├── lib/              # prisma.ts (pg adapter), tmdb.ts
         ├── middleware/       # auth.ts, admin.ts
         ├── routes/           # auth, games, ranking, profile, admin
         ├── constants/
@@ -48,22 +49,22 @@ film-rating-guessr/
 ## API Endpoints
 
 ```
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me              (auth required)
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/auth/me              (auth required)
 
-GET  /api/games/random         (auth required)
-POST /api/games/guess          (auth required) — server fetches real rating from TMDB
-GET  /api/games/history        (auth required)
+GET    /api/games/random         (auth required)
+POST   /api/games/guess          (auth required) — server fetches real rating from TMDB
+GET    /api/games/history        (auth required)
 
-GET  /api/ranking
+GET    /api/ranking
 
-GET  /api/profile              (auth required)
-PUT  /api/profile              (auth required)
+GET    /api/profile              (auth required)
+PUT    /api/profile              (auth required)
 
-GET  /api/admin/users          (admin only)
-PUT  /api/admin/users/:id/role (admin only)
-DEL  /api/admin/users/:id      (admin only)
+GET    /api/admin/users          (admin only)
+PUT    /api/admin/users/:id/role (admin only)
+DELETE /api/admin/users/:id      (admin only)
 ```
 
 ## Quick Start
@@ -76,8 +77,8 @@ docker-compose up -d
 
 # 2. Server
 cd server && cp .env.example .env   # fill in TMDB_API_KEY and JWT_SECRET
-npm install
-npx prisma migrate dev --name init
+npm install                         # also runs prisma generate automatically
+npx prisma migrate dev --name init  # create DB tables (first time only)
 npm run dev
 
 # 3. Client (new terminal)
