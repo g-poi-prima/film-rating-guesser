@@ -51,17 +51,12 @@ router.delete("/users/:id", async (req: AuthRequest, res) => {
     return;
   }
 
-  await prisma.$transaction(async (tx) => {
-    const matchIds = (await tx.match.findMany({
-      where: { OR: [{ player1Id: id }, { player2Id: id }] },
-      select: { id: true },
-    })).map((m) => m.id);
-    await tx.matchRound.deleteMany({ where: { matchId: { in: matchIds } } });
-    await tx.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
-    await tx.match.deleteMany({ where: { id: { in: matchIds } } });
-    await tx.game.deleteMany({ where: { userId: id } });
-    await tx.user.delete({ where: { id } });
-  });
+  await prisma.$transaction([
+    prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }),
+    prisma.match.deleteMany({ where: { OR: [{ player1Id: id }, { player2Id: id }] } }),
+    prisma.game.deleteMany({ where: { userId: id } }),
+    prisma.user.delete({ where: { id } }),
+  ]);
 
   res.json({ message: "Utente eliminato" });
 });

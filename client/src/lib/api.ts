@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory } from '../types';
+import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -93,9 +93,4 @@ export async function updateUserRole(id: number, role: 'USER' | 'ADMIN'): Promis
 
 export async function deleteUser(id: number): Promise<void> {
   await api.delete(`/admin/users/${id}`);
-}
-
-export async function getMatchHistory(): Promise<MatchHistory[]> {
-  const { data } = await api.get('/matches/history');
-  return data;
 }

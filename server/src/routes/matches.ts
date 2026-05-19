@@ -13,38 +13,30 @@ router.get("/history", async (req: AuthRequest, res) => {
   const matches = await prisma.match.findMany({
     where: {
       OR: [{ player1Id: userId }, { player2Id: userId }],
-      status: { in: ["COMPLETED", "CANCELLED"] },
+      status: "COMPLETED",
     },
     orderBy: { createdAt: "desc" },
     take: 20,
     include: {
       player1: { select: { id: true, username: true, avatar: true } },
       player2: { select: { id: true, username: true, avatar: true } },
-      rounds: { orderBy: { roundNumber: "asc" } },
     },
   });
 
+  // Normalise so the caller always sees "me" vs "opponent"
   const data = matches.map((m) => {
     const iAmPlayer1 = m.player1Id === userId;
     return {
       id: m.id,
-      status: m.status,
-      totalRounds: m.totalRounds,
-      roundsPlayed: m.rounds.length,
-      myTotalScore: iAmPlayer1 ? m.player1Score : m.player2Score,
-      opponentTotalScore: iAmPlayer1 ? m.player2Score : m.player1Score,
+      movieTitle: m.movieTitle,
+      moviePoster: m.moviePoster,
+      realRating: m.realRating,
+      myRating: iAmPlayer1 ? m.player1Rating : m.player2Rating,
+      myScore: iAmPlayer1 ? m.player1Score : m.player2Score,
       opponent: iAmPlayer1 ? m.player2 : m.player1,
+      opponentRating: iAmPlayer1 ? m.player2Rating : m.player1Rating,
+      opponentScore: iAmPlayer1 ? m.player2Score : m.player1Score,
       createdAt: m.createdAt,
-      rounds: m.rounds.map((r) => ({
-        roundNumber: r.roundNumber,
-        movieTitle: r.movieTitle,
-        moviePoster: r.moviePoster,
-        realRating: r.realRating,
-        myRating: iAmPlayer1 ? r.player1Rating : r.player2Rating,
-        myScore: iAmPlayer1 ? r.player1Score : r.player2Score,
-        opponentRating: iAmPlayer1 ? r.player2Rating : r.player1Rating,
-        opponentScore: iAmPlayer1 ? r.player2Score : r.player1Score,
-      })),
     };
   });
 
