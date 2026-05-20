@@ -14,16 +14,34 @@ export interface MatchStartPayload {
   matchId: number;
   movie: { id: number; title: string; overview: string; poster: string | null };
   opponentUsername: string;
+  totalRounds: number;
+  currentRound: number;
+}
+
+export interface MatchRoundResultPayload {
+  roundNumber: number;
+  totalRounds: number;
+  realRating: number;
+  yourRating: number;
+  yourRoundScore: number;
+  yourTotal: number;
+  opponentUsername: string;
+  opponentRating: number;
+  opponentRoundScore: number;
+  opponentTotal: number;
+  isLastRound: boolean;
+}
+
+export interface MatchRoundStartPayload {
+  currentRound: number;
+  movie: { id: number; title: string; overview: string; poster: string | null };
 }
 
 export interface MatchEndPayload {
   matchId: number;
-  realRating: number;
-  yourRating: number;
-  yourScore: number;
+  yourTotalScore: number;
+  opponentTotalScore: number;
   opponentUsername: string;
-  opponentRating: number;
-  opponentScore: number;
 }
 
 export interface MessagePayload {
@@ -42,6 +60,8 @@ interface ServerToClientEvents {
   'match:queue_left': () => void;
   'match:start': (data: MatchStartPayload) => void;
   'match:opponent_submitted': () => void;
+  'match:round_result': (data: MatchRoundResultPayload) => void;
+  'match:round_start': (data: MatchRoundStartPayload) => void;
   'match:end': (data: MatchEndPayload) => void;
   'match:opponent_disconnected': () => void;
   'chat:message': (msg: MessagePayload) => void;

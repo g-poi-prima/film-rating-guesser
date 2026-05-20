@@ -43,17 +43,27 @@ export interface GuessResult {
   diff: number;
 }
 
-export interface MatchHistory {
-  id: number;
+export interface MatchRoundEntry {
+  roundNumber: number;
   movieTitle: string;
   moviePoster?: string | null;
   realRating: number;
   myRating: number | null;
   myScore: number | null;
-  opponent: { id: number; username: string; avatar: string | null } | null;
   opponentRating: number | null;
   opponentScore: number | null;
+}
+
+export interface MatchHistory {
+  id: number;
+  status: string;
+  totalRounds: number;
+  roundsPlayed: number;
+  myTotalScore: number | null;
+  opponentTotalScore: number | null;
+  opponent: { id: number; username: string; avatar: string | null } | null;
   createdAt: string;
+  rounds: MatchRoundEntry[];
 }
 
 export interface AdminUser {
