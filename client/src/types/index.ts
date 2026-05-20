@@ -43,6 +43,19 @@ export interface GuessResult {
   diff: number;
 }
 
+export interface MatchHistory {
+  id: number;
+  movieTitle: string;
+  moviePoster?: string | null;
+  realRating: number;
+  myRating: number | null;
+  myScore: number | null;
+  opponent: { id: number; username: string; avatar: string | null } | null;
+  opponentRating: number | null;
+  opponentScore: number | null;
+  createdAt: string;
+}
+
 export interface AdminUser {
   id: number;
   username: string;

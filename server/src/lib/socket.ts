@@ -43,8 +43,13 @@ interface MessagePayload {
   receiverId: number | null;
 }
 
+interface OnlineUserInfo {
+  id: number;
+  username: string;
+}
+
 interface ServerToClientEvents {
-  "users:online": (userIds: number[]) => void;
+  "users:online": (users: OnlineUserInfo[]) => void;
   "match:queue_joined": () => void;
   "match:queue_left": () => void;
   "match:start": (data: MatchStartPayload) => void;
@@ -74,7 +79,8 @@ interface MatchRoom {
   ratings: Map<number, number>; // userId → submitted rating
 }
 
-const onlineUsers = new Map<number, string>(); // userId → socketId
+interface OnlineEntry { socketId: string; username: string; }
+const onlineUsers = new Map<number, OnlineEntry>(); // userId → entry
 const matchQueue: number[] = [];               // userIds waiting for opponent
 const matchRooms = new Map<number, MatchRoom>(); // matchId → room state
 
@@ -126,8 +132,8 @@ export function setupSocket(httpServer: HTTPServer) {
 
   io.on("connection", (socket) => {
     const user = socket.data.user;
-    onlineUsers.set(user.id, socket.id);
-    io.emit("users:online", Array.from(onlineUsers.keys()));
+    onlineUsers.set(user.id, { socketId: socket.id, username: user.username });
+    io.emit("users:online", Array.from(onlineUsers.entries()).map(([id, e]) => ({ id, username: e.username })));
 
     // ── Matchmaking ──────────────────────────────────────────────────────────
 
@@ -178,8 +184,8 @@ export function setupSocket(httpServer: HTTPServer) {
           prisma.user.findUnique({ where: { id: p2Id }, select: { username: true } }),
         ]);
 
-        const s1 = onlineUsers.get(p1Id);
-        const s2 = onlineUsers.get(p2Id);
+        const s1 = onlineUsers.get(p1Id)?.socketId;
+        const s2 = onlineUsers.get(p2Id)?.socketId;
         if (s1) io.to(s1).emit("match:start", { matchId: match.id, movie, opponentUsername: p2?.username ?? "Avversario" });
         if (s2) io.to(s2).emit("match:start", { matchId: match.id, movie, opponentUsername: p1?.username ?? "Avversario" });
       } catch {
@@ -204,7 +210,7 @@ export function setupSocket(httpServer: HTTPServer) {
 
       // Notify opponent that this player submitted
       const opponentId = room.player1Id === user.id ? room.player2Id : room.player1Id;
-      const opponentSocket = onlineUsers.get(opponentId);
+      const opponentSocket = onlineUsers.get(opponentId)?.socketId;
       if (opponentSocket) io.to(opponentSocket).emit("match:opponent_submitted");
 
       // Both submitted → resolve match
@@ -233,8 +239,8 @@ export function setupSocket(httpServer: HTTPServer) {
         prisma.user.findUnique({ where: { id: room.player2Id }, select: { username: true } }),
       ]);
 
-      const s1 = onlineUsers.get(room.player1Id);
-      const s2 = onlineUsers.get(room.player2Id);
+      const s1 = onlineUsers.get(room.player1Id)?.socketId;
+      const s2 = onlineUsers.get(room.player2Id)?.socketId;
 
       if (s1) io.to(s1).emit("match:end", {
         matchId,
@@ -284,7 +290,7 @@ export function setupSocket(httpServer: HTTPServer) {
 
       if (receiverId) {
         // Private: deliver to recipient and echo back to sender
-        const recipientSocket = onlineUsers.get(receiverId);
+        const recipientSocket = onlineUsers.get(receiverId)?.socketId;
         if (recipientSocket) io.to(recipientSocket).emit("chat:message", payload);
         socket.emit("chat:message", payload);
       } else {
@@ -335,7 +341,7 @@ export function setupSocket(httpServer: HTTPServer) {
         if (room.player1Id !== user.id && room.player2Id !== user.id) continue;
 
         const opponentId = room.player1Id === user.id ? room.player2Id : room.player1Id;
-        const opponentSocket = onlineUsers.get(opponentId);
+        const opponentSocket = onlineUsers.get(opponentId)?.socketId;
         if (opponentSocket) io.to(opponentSocket).emit("match:opponent_disconnected");
 
         await prisma.match.update({
@@ -345,7 +351,7 @@ export function setupSocket(httpServer: HTTPServer) {
         matchRooms.delete(matchId);
       }
 
-      io.emit("users:online", Array.from(onlineUsers.keys()));
+      io.emit("users:online", Array.from(onlineUsers.entries()).map(([id, e]) => ({ id, username: e.username })));
     });
   });
 

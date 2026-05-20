@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useSocket } from '../context/SocketContext';
 import {
   Film,
   Sun,
@@ -12,11 +13,15 @@ import {
   Shield,
   Menu,
   X,
+  Swords,
+  MessageCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const links = [
   { to: '/', label: 'Gioca', icon: Film },
+  { to: '/match', label: '1v1', icon: Swords },
+  { to: '/chat', label: 'Chat', icon: MessageCircle },
   { to: '/ranking', label: 'Classifica', icon: Trophy },
   { to: '/history', label: 'Storico', icon: History },
   { to: '/profile', label: 'Profilo', icon: User },
@@ -25,8 +30,11 @@ const links = [
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { dark, toggle } = useTheme();
+  const { onlineUsers } = useSocket();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+
+  const onlineCount = onlineUsers.filter((u) => u.id !== user?.id).length;
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -44,7 +52,7 @@ export default function Navbar() {
                 <Link
                   key={l.to}
                   to={l.to}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
                     active
                       ? 'bg-primary/10 text-primary'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -52,6 +60,11 @@ export default function Navbar() {
                 >
                   <l.icon className="w-4 h-4" />
                   {l.label}
+                  {l.to === '/chat' && onlineCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-green-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {onlineCount > 9 ? '9+' : onlineCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -116,6 +129,11 @@ export default function Navbar() {
               >
                 <l.icon className="w-4 h-4" />
                 {l.label}
+                {l.to === '/chat' && onlineCount > 0 && (
+                  <span className="ml-auto text-xs bg-green-500 text-white font-bold px-1.5 py-0.5 rounded-full">
+                    {onlineCount > 9 ? '9+' : onlineCount}
+                  </span>
+                )}
               </Link>
             );
           })}
