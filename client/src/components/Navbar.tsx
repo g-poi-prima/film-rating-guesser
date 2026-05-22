@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSocket } from '../context/SocketContext';
+import { useMatch } from '../context/MatchContext';
 import {
   Film,
   Sun,
@@ -31,10 +32,14 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { dark, toggle } = useTheme();
   const { onlineUsers } = useSocket();
+  const { phase } = useMatch();
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const onlineCount = onlineUsers.filter((u) => u.id !== user?.id).length;
+
+  const matchActive = phase !== 'idle' && phase !== 'result' && phase !== 'disconnected';
+  const showMatchBanner = matchActive && location.pathname !== '/match';
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -111,6 +116,27 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Match-in-progress banner */}
+      {showMatchBanner && (
+        <div className="bg-primary/10 border-t border-primary/20 px-4 py-1.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+            </span>
+            <span className="text-xs font-medium text-primary">
+              {phase === 'queuing' ? 'In coda...' : 'Partita in corso'}
+            </span>
+          </div>
+          <Link
+            to="/match"
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            Torna alla partita →
+          </Link>
+        </div>
+      )}
 
       {open && (
         <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 pb-4">

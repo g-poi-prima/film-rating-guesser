@@ -1,130 +1,14 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useSocket } from '../context/SocketContext';
-import type { MatchStartPayload, MatchRoundResultPayload, MatchEndPayload } from '../context/SocketContext';
+import { useState } from 'react';
+import { useMatch } from '../context/MatchContext';
 import { Swords, Loader2, AlertCircle, Film } from 'lucide-react';
 
-type Phase = 'idle' | 'queuing' | 'playing' | 'submitted' | 'round_result' | 'result' | 'disconnected';
-
-interface ActiveMatch {
-  matchId: number;
-  movie: MatchStartPayload['movie'];
-  opponentUsername: string;
-  totalRounds: number;
-  currentRound: number;
-}
-
-interface RoundSummary {
-  roundNumber: number;
-  movieTitle: string;
-  realRating: number;
-  yourRating: number;
-  yourRoundScore: number;
-  opponentRating: number;
-  opponentRoundScore: number;
-}
-
 export default function MatchPage() {
-  const { socket } = useSocket();
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [activeMatch, setActiveMatch] = useState<ActiveMatch | null>(null);
+  const { phase, activeMatch, roundResult, rounds, finalResult, countdown, joinQueue, leaveQueue, submitRating, reset } = useMatch();
   const [userRating, setUserRating] = useState(5);
-  const [roundResult, setRoundResult] = useState<MatchRoundResultPayload | null>(null);
-  const [rounds, setRounds] = useState<RoundSummary[]>([]);
-  const [finalResult, setFinalResult] = useState<MatchEndPayload | null>(null);
-  const [countdown, setCountdown] = useState(4);
 
-  // Countdown while showing round result
-  useEffect(() => {
-    if (phase !== 'round_result') return;
-    setCountdown(4);
-    const t = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(t);
-  }, [phase]);
-
-  const reset = useCallback(() => {
-    setPhase('idle');
-    setActiveMatch(null);
-    setRoundResult(null);
-    setRounds([]);
-    setFinalResult(null);
-    setUserRating(5);
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on('match:queue_joined', () => setPhase('queuing'));
-    socket.on('match:queue_left', () => setPhase('idle'));
-
-    socket.on('match:start', (data) => {
-      setActiveMatch(data);
-      setRounds([]);
-      setUserRating(5);
-      setPhase('playing');
-    });
-
-    socket.on('match:round_result', (data) => {
-      setRoundResult(data);
-      setRounds((prev) => [
-        ...prev,
-        {
-          roundNumber: data.roundNumber,
-          movieTitle: activeMatch?.movie.title ?? '',
-          realRating: data.realRating,
-          yourRating: data.yourRating,
-          yourRoundScore: data.yourRoundScore,
-          opponentRating: data.opponentRating,
-          opponentRoundScore: data.opponentRoundScore,
-        },
-      ]);
-      setPhase('round_result');
-    });
-
-    socket.on('match:round_start', (data) => {
-      setActiveMatch((prev) =>
-        prev ? { ...prev, currentRound: data.currentRound, movie: data.movie } : prev
-      );
-      setUserRating(5);
-      setRoundResult(null);
-      setPhase('playing');
-    });
-
-    socket.on('match:end', (data) => {
-      setFinalResult(data);
-      setPhase('result');
-    });
-
-    socket.on('match:opponent_disconnected', () => {
-      setActiveMatch(null);
-      setPhase('disconnected');
-    });
-
-    return () => {
-      socket.off('match:queue_joined');
-      socket.off('match:queue_left');
-      socket.off('match:start');
-      socket.off('match:round_result');
-      socket.off('match:round_start');
-      socket.off('match:end');
-      socket.off('match:opponent_disconnected');
-    };
-  }, [socket, activeMatch?.movie.title]);
-
-  const joinQueue = () => socket?.emit('match:join_queue');
-  const leaveQueue = () => socket?.emit('match:leave_queue');
-  const submitRating = () => {
-    if (!activeMatch) return;
-    socket?.emit('match:submit', { matchId: activeMatch.matchId, userRating });
-    setPhase('submitted');
-  };
-
-  if (!socket) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-        <span className="text-gray-500 dark:text-gray-400">Connessione in corso...</span>
-      </div>
-    );
+  // ── No socket ────────────────────────────────────────────────────────────────
+  if (phase === 'idle' && activeMatch === null && finalResult === null) {
+    // check handled below in idle branch
   }
 
   // ── Idle ─────────────────────────────────────────────────────────────────────
@@ -247,7 +131,7 @@ export default function MatchPage() {
 
               {phase === 'playing' && (
                 <button
-                  onClick={submitRating}
+                  onClick={() => { submitRating(userRating); }}
                   className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
                 >
                   Invia voto
@@ -364,7 +248,7 @@ export default function MatchPage() {
               {rounds.map((r) => (
                 <div key={r.roundNumber} className="flex items-center gap-3 text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-2.5">
                   <span className="font-bold text-gray-400 w-4">{r.roundNumber}</span>
-                  <span className="flex-1 truncate text-gray-600 dark:text-gray-300 font-medium">{r.movieTitle}</span>
+                  <span className="flex-1 truncate text-gray-600 dark:text-gray-300 font-medium">{r.movieTitle || '—'}</span>
                   <span className="text-gray-500 dark:text-gray-400">{r.realRating.toFixed(1)}</span>
                   <span className="font-bold text-primary w-10 text-right">+{r.yourRoundScore}</span>
                 </div>
