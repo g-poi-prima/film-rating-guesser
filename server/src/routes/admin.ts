@@ -56,7 +56,14 @@ router.delete("/users/:id", async (req: AuthRequest, res) => {
       where: { OR: [{ player1Id: id }, { player2Id: id }] },
       select: { id: true },
     })).map((m) => m.id);
+    const customMatchIds = (await tx.customMatch.findMany({
+      where: { hostId: id },
+      select: { id: true },
+    })).map((m) => m.id);
     await tx.matchRound.deleteMany({ where: { matchId: { in: matchIds } } });
+    await tx.customMatchResult.deleteMany({ where: { OR: [{ customMatchId: { in: customMatchIds } }, { userId: id }] } });
+    await tx.customMatch.deleteMany({ where: { id: { in: customMatchIds } } });
+    await tx.friendRequest.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
     await tx.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
     await tx.match.deleteMany({ where: { id: { in: matchIds } } });
     await tx.game.deleteMany({ where: { userId: id } });

@@ -13,6 +13,8 @@ import rankingRoutes from "@/routes/ranking";
 import profileRoutes from "@/routes/profile";
 import adminRoutes from "@/routes/admin";
 import matchesRoutes from "@/routes/matches";
+import friendsRoutes from "@/routes/friends";
+import lobbiesRoutes from "@/routes/lobbies";
 
 const app = express();
 app.use(cors({ origin: "*" }));
@@ -28,6 +30,8 @@ app.use("/api/ranking", rankingRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/matches", matchesRoutes);
+app.use("/api/friends", friendsRoutes);
+app.use("/api/lobbies", lobbiesRoutes);
 
 const httpServer = createServer(app);
 setupSocket(httpServer);
