@@ -16,12 +16,14 @@ import {
   X,
   Swords,
   MessageCircle,
+  Users,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const links = [
   { to: '/', label: 'Gioca', icon: Film },
   { to: '/match', label: '1v1', icon: Swords },
+  { to: '/lobbies', label: 'Lobby', icon: Users },
   { to: '/chat', label: 'Chat', icon: MessageCircle },
   { to: '/ranking', label: 'Classifica', icon: Trophy },
   { to: '/history', label: 'Storico', icon: History },
