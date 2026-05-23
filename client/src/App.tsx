@@ -17,6 +17,7 @@ import MatchPage from './pages/MatchPage';
 import ChatPage from './pages/ChatPage';
 import LobbiesPage from './pages/LobbiesPage';
 import LobbyPage from './pages/LobbyPage';
+import FriendsPage from './pages/FriendsPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
                   <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
                   <Route path="/lobbies" element={<ProtectedRoute><LobbiesPage /></ProtectedRoute>} />
                   <Route path="/lobby/:code" element={<ProtectedRoute><LobbyPage /></ProtectedRoute>} />
+                  <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
                 </Routes>
               </main>
             </BrowserRouter>

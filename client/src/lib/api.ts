@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory, FriendUser, FriendRequest, FriendStatusResult, LobbyPublic } from '../types';
+import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory, FriendUser, FriendRequest, FriendStatusResult, LobbyPublic, UserProfile, LobbyHistoryEntry } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -66,7 +66,7 @@ export async function getRanking(): Promise<RankingEntry[]> {
   return data;
 }
 
-export async function getProfile(): Promise<User & { totalScore: number; gamesPlayed: number }> {
+export async function getProfile(): Promise<UserProfile> {
   const { data } = await api.get('/profile');
   return data;
 }
@@ -97,6 +97,11 @@ export async function deleteUser(id: number): Promise<void> {
 
 export async function getMatchHistory(): Promise<MatchHistory[]> {
   const { data } = await api.get('/matches/history');
+  return data;
+}
+
+export async function getLobbyHistory(): Promise<LobbyHistoryEntry[]> {
+  const { data } = await api.get('/matches/lobby-history');
   return data;
 }
 

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSocket } from '../context/SocketContext';
 import { useMatch } from '../context/MatchContext';
+import { useFriends } from '../context/FriendsContext';
 import {
   Film,
   Sun,
@@ -17,6 +18,7 @@ import {
   Swords,
   MessageCircle,
   Users,
+  UserCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,6 +26,7 @@ const links = [
   { to: '/', label: 'Gioca', icon: Film },
   { to: '/match', label: '1v1', icon: Swords },
   { to: '/lobbies', label: 'Lobby', icon: Users },
+  { to: '/friends', label: 'Amici', icon: UserCheck },
   { to: '/chat', label: 'Chat', icon: MessageCircle },
   { to: '/ranking', label: 'Classifica', icon: Trophy },
   { to: '/history', label: 'Storico', icon: History },
@@ -35,10 +38,12 @@ export default function Navbar() {
   const { dark, toggle } = useTheme();
   const { onlineUsers } = useSocket();
   const { phase } = useMatch();
+  const { pendingRequests, friendIds } = useFriends();
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
-  const onlineCount = onlineUsers.filter((u) => u.id !== user?.id).length;
+  const onlineCount = onlineUsers.filter((u) => u.id !== user?.id && friendIds.has(u.id)).length;
+  const pendingCount = pendingRequests.length;
 
   const matchActive = phase !== 'idle' && phase !== 'result' && phase !== 'disconnected';
   const showMatchBanner = matchActive && location.pathname !== '/match';
@@ -70,6 +75,11 @@ export default function Navbar() {
                   {l.to === '/chat' && onlineCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-green-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                       {onlineCount > 9 ? '9+' : onlineCount}
+                    </span>
+                  )}
+                  {l.to === '/friends' && pendingCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {pendingCount > 9 ? '9+' : pendingCount}
                     </span>
                   )}
                 </Link>
@@ -160,6 +170,11 @@ export default function Navbar() {
                 {l.to === '/chat' && onlineCount > 0 && (
                   <span className="ml-auto text-xs bg-green-500 text-white font-bold px-1.5 py-0.5 rounded-full">
                     {onlineCount > 9 ? '9+' : onlineCount}
+                  </span>
+                )}
+                {l.to === '/friends' && pendingCount > 0 && (
+                  <span className="ml-auto text-xs bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full">
+                    {pendingCount > 9 ? '9+' : pendingCount}
                   </span>
                 )}
               </Link>

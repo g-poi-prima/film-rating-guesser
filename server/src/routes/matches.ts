@@ -51,4 +51,47 @@ router.get("/history", async (req: AuthRequest, res) => {
   res.json(data);
 });
 
+router.get("/lobby-history", async (req: AuthRequest, res) => {
+  const userId = req.user!.id;
+
+  const results = await prisma.customMatchResult.findMany({
+    where: { userId },
+    orderBy: { id: "desc" },
+    take: 20,
+    include: {
+      match: {
+        include: {
+          host: { select: { id: true, username: true } },
+          results: {
+            orderBy: { rank: "asc" },
+            include: { user: { select: { id: true, username: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  const data = results.map((r) => ({
+    id: r.match.id,
+    code: r.match.code,
+    name: r.match.name,
+    mode: r.match.mode,
+    totalRounds: r.match.totalRounds,
+    status: r.match.status,
+    createdAt: r.match.createdAt,
+    endedAt: r.match.endedAt,
+    myRank: r.rank,
+    myTotalScore: r.totalScore,
+    playerCount: r.match.results.length,
+    players: r.match.results.map((pr) => ({
+      userId: pr.userId,
+      username: pr.user.username,
+      totalScore: pr.totalScore,
+      rank: pr.rank,
+    })),
+  }));
+
+  res.json(data);
+});
+
 export default router;

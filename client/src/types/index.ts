@@ -25,6 +25,7 @@ export interface RankingEntry {
   username: string;
   avatar?: string | null;
   gamesPlayed: number;
+  matchRoundsPlayed: number;
   totalScore: number;
   averageScore: number;
 }
@@ -103,6 +104,41 @@ export interface LobbyPlayer {
   username: string;
   totalScore: number;
   eliminated: boolean;
+}
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  role: 'USER' | 'ADMIN';
+  avatar?: string | null;
+  createdAt?: string;
+  // Solo stats
+  totalScore: number;
+  gamesPlayed: number;
+  // Match stats
+  matchesPlayed: number;
+  matchWins: number;
+  matchLosses: number;
+  matchDraws: number;
+  matchRoundsPlayed: number;
+  // Social
+  friendCount: number;
+}
+
+export interface LobbyHistoryEntry {
+  id: number;
+  code: string;
+  name: string;
+  mode: 'ALL_VS_ALL' | 'TOURNAMENT';
+  totalRounds: number;
+  status: string;
+  createdAt: string;
+  endedAt: string | null;
+  myRank: number;
+  myTotalScore: number;
+  playerCount: number;
+  players: { userId: number; username: string; totalScore: number; rank: number }[];
 }
 
 export interface LobbyPublic {

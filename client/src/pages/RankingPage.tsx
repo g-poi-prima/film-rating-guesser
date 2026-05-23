@@ -145,7 +145,7 @@ export default function RankingPage() {
                   <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
                     <span className="flex items-center gap-1">
                       <Gamepad2 className="w-3 h-3" />
-                      {entry.gamesPlayed} partite
+                      {entry.gamesPlayed}s·{entry.matchRoundsPlayed}m
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="w-3 h-3" />
