@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory } from '../types';
+import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory, FriendUser, FriendRequest, FriendStatusResult, LobbyPublic } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -97,5 +97,43 @@ export async function deleteUser(id: number): Promise<void> {
 
 export async function getMatchHistory(): Promise<MatchHistory[]> {
   const { data } = await api.get('/matches/history');
+  return data;
+}
+
+// ── Friends ──────────────────────────────────────────────────────────────────
+
+export async function getFriends(): Promise<FriendUser[]> {
+  const { data } = await api.get('/friends');
+  return data;
+}
+
+export async function getFriendRequests(): Promise<FriendRequest[]> {
+  const { data } = await api.get('/friends/requests');
+  return data;
+}
+
+export async function getFriendStatus(userId: number): Promise<FriendStatusResult> {
+  const { data } = await api.get(`/friends/status/${userId}`);
+  return data;
+}
+
+export async function sendFriendRequest(receiverId: number): Promise<FriendRequest> {
+  const { data } = await api.post('/friends/request', { receiverId });
+  return data;
+}
+
+export async function acceptFriendRequest(id: number): Promise<FriendRequest> {
+  const { data } = await api.put(`/friends/${id}/accept`);
+  return data;
+}
+
+export async function deleteFriendRequest(id: number): Promise<void> {
+  await api.delete(`/friends/${id}`);
+}
+
+// ── Lobbies ──────────────────────────────────────────────────────────────────
+
+export async function getOpenLobbies(): Promise<LobbyPublic[]> {
+  const { data } = await api.get('/lobbies');
   return data;
 }

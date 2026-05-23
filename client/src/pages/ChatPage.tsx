@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import type { MessagePayload } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { useFriends } from '../context/FriendsContext';
 import { Send, Globe, User } from 'lucide-react';
 
 type View = 'global' | 'private';
@@ -9,6 +10,7 @@ type View = 'global' | 'private';
 export default function ChatPage() {
   const { socket, onlineUsers } = useSocket();
   const { user } = useAuth();
+  const { friendIds } = useFriends();
   const [view, setView] = useState<View>('global');
   const [globalMessages, setGlobalMessages] = useState<MessagePayload[]>([]);
   const [privateMessages, setPrivateMessages] = useState<MessagePayload[]>([]);
@@ -86,7 +88,8 @@ export default function ChatPage() {
     setInput('');
   };
 
-  const otherOnline = onlineUsers.filter((u) => u.id !== user?.id);
+  // Only show friends in the online sidebar
+  const otherOnline = onlineUsers.filter((u) => u.id !== user?.id && friendIds.has(u.id));
   const messages = view === 'global' ? globalMessages : privateMessages;
   const canSend = view === 'global' || (view === 'private' && selectedUserId !== null);
 
@@ -115,12 +118,12 @@ export default function ChatPage() {
           </button>
 
           <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide mt-1">
-            Online ({otherOnline.length})
+            Amici online ({otherOnline.length})
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {otherOnline.length === 0 ? (
-              <p className="px-4 py-2 text-xs text-gray-400 dark:text-gray-600">Nessuno online</p>
+              <p className="px-4 py-2 text-xs text-gray-400 dark:text-gray-600">Nessun amico online</p>
             ) : (
               otherOnline.map((u) => {
                 const active = selectedUserId === u.id && view === 'private';

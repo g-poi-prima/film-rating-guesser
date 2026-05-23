@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SocketProvider } from './context/SocketContext';
 import { MatchProvider } from './context/MatchContext';
+import { FriendsProvider } from './context/FriendsContext';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
@@ -21,6 +22,7 @@ function App() {
       <AuthProvider>
         <SocketProvider>
           <MatchProvider>
+            <FriendsProvider>
             <BrowserRouter>
               <Navbar />
               <main className="min-h-[calc(100vh-4rem)]">
@@ -37,6 +39,7 @@ function App() {
                 </Routes>
               </main>
             </BrowserRouter>
+            </FriendsProvider>
           </MatchProvider>
         </SocketProvider>
       </AuthProvider>

@@ -75,3 +75,44 @@ export interface AdminUser {
   createdAt: string;
   _count: { games: number };
 }
+
+export interface FriendUser {
+  id: number;
+  username: string;
+  avatar: string | null;
+}
+
+export interface FriendRequest {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  status: 'PENDING' | 'ACCEPTED';
+  sender?: FriendUser;
+  receiver?: FriendUser;
+}
+
+export type FriendStatus = 'friends' | 'request_sent' | 'request_received' | null;
+
+export interface FriendStatusResult {
+  status: FriendStatus;
+  requestId?: number;
+}
+
+export interface LobbyPlayer {
+  userId: number;
+  username: string;
+  totalScore: number;
+  eliminated: boolean;
+}
+
+export interface LobbyPublic {
+  code: string;
+  name: string;
+  mode: 'ALL_VS_ALL' | 'TOURNAMENT';
+  hostId: number;
+  playerCount: number;
+  players: LobbyPlayer[];
+  status: 'WAITING' | 'IN_PROGRESS' | 'FINISHED';
+  currentRound: number;
+  totalRounds: number;
+}
