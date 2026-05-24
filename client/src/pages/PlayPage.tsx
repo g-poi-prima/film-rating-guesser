@@ -179,7 +179,7 @@ export default function PlayPage() {
                     type="range"
                     min="0"
                     max="10"
-                    step="0.5"
+                    step={0.1}
                     value={userRating}
                     onChange={(e) => setUserRating(parseFloat(e.target.value))}
                     className="w-full accent-primary cursor-pointer"
