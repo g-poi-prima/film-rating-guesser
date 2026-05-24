@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getRandomMovie } from "@/lib/tmdb";
+import type { FilmMode } from "@/lib/lobbyStore";
 import { calcScore } from "@/lib/scoring";
 import { TOTAL_ROUNDS, ROUND_TRANSITION_MS } from "@/constants";
 import { lobbies, generateCode, lobbyToPublic } from "@/lib/lobbyStore";
@@ -21,9 +22,10 @@ export function registerLobbyHandlers(
 
   // ── Create lobby ────────────────────────────────────────────────────────────
 
-  socket.on("lobby:create", async ({ name, mode, totalRounds }) => {
+  socket.on("lobby:create", async ({ name, mode, totalRounds, filmMode }) => {
     const code = generateCode();
     const rounds = totalRounds ?? TOTAL_ROUNDS;
+    const resolvedFilmMode: FilmMode = filmMode === "any" ? "any" : "popular";
 
     const dbMatch = await prisma.customMatch.create({
       data: { code, name, mode, hostId: user.id, totalRounds: rounds },
@@ -33,6 +35,7 @@ export function registerLobbyHandlers(
       code,
       name,
       mode,
+      filmMode: resolvedFilmMode,
       hostId: user.id,
       players: new Map([
         [user.id, { userId: user.id, username: user.username, totalScore: 0, eliminated: false, submittedRating: null }],
@@ -108,7 +111,7 @@ export function registerLobbyHandlers(
     await prisma.customMatch.update({ where: { id: lobby.dbMatchId! }, data: { status: "ACTIVE" } });
 
     try {
-      const movieData = await getRandomMovie();
+      const movieData = await getRandomMovie(lobby.filmMode);
       lobby.movie = { id: movieData.id, title: movieData.title, overview: movieData.overview, poster: movieData.poster };
       lobby.realRating = movieData.rating;
 
@@ -235,7 +238,7 @@ async function advanceLobbyRound(io: AppServer, code: string): Promise<void> {
   if (!lobby) return;
 
   try {
-    const next = await getRandomMovie();
+    const next = await getRandomMovie(lobby.filmMode);
     lobby.movie = { id: next.id, title: next.title, overview: next.overview, poster: next.poster };
     lobby.realRating = next.rating;
 

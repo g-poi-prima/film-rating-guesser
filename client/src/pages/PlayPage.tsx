@@ -1,30 +1,33 @@
 import { useState, useCallback } from 'react';
 import { getRandomMovie, submitGuess } from '../lib/api';
 import type { RandomMovie, GuessResult } from '../types';
-import { Film, Star, RefreshCw, PlayCircle } from 'lucide-react';
+import { Film, Star, RefreshCw, PlayCircle, Flame, Shuffle } from 'lucide-react';
+
+type MovieMode = 'popular' | 'any';
 
 export default function PlayPage() {
   const [movie, setMovie] = useState<RandomMovie | null>(null);
   const [loading, setLoading] = useState(false);
   const [userRating, setUserRating] = useState(5);
   const [result, setResult] = useState<GuessResult | null>(null);
+  const [movieMode, setMovieMode] = useState<MovieMode>('popular');
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchMovie = useCallback(async () => {
+  const fetchMovie = useCallback(async (mode?: MovieMode) => {
     setLoading(true);
     setError('');
     setResult(null);
     setShowResult(false);
     setUserRating(5);
     try {
-      setMovie(await getRandomMovie());
+      setMovie(await getRandomMovie(mode ?? movieMode));
     } catch {
       setError('Errore nel caricamento del film. Riprova.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [movieMode]);
 
   const handleGuess = async () => {
     if (!movie) return;
@@ -79,17 +82,51 @@ export default function PlayPage() {
 
       {/* Start screen */}
       {!movie && !loading && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-16 text-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center space-y-6">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
             <Film className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-lg font-semibold mb-2">Pronto a giocare?</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">
-            Ti mostreremo un film casuale: dai un voto e scopri quanto sei vicino al rating reale
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Pronto a giocare?</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+              Ti mostreremo un film: dai un voto e scopri quanto sei vicino al rating reale su TMDB
+            </p>
+          </div>
+
+          {/* Film mode toggle */}
+          <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <button
+              onClick={() => setMovieMode('popular')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                movieMode === 'popular'
+                  ? 'bg-primary text-white'
+                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Flame className="w-4 h-4" />
+              Film famosi
+            </button>
+            <button
+              onClick={() => setMovieMode('any')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${
+                movieMode === 'any'
+                  ? 'bg-primary text-white'
+                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Shuffle className="w-4 h-4" />
+              Casuali
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-600 -mt-3">
+            {movieMode === 'popular'
+              ? 'Film con almeno 1 000 voti su TMDB — riconoscibili dalla maggior parte dei giocatori'
+              : 'Qualsiasi film dal catalogo TMDB — potrebbe essere molto oscuro'}
           </p>
+
           <button
-            onClick={fetchMovie}
-            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-xl transition-colors"
+            onClick={() => fetchMovie()}
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
           >
             <PlayCircle className="w-5 h-5" />
             Inizia
@@ -203,8 +240,8 @@ export default function PlayPage() {
                   </div>
                 </div>
                 <button
-                  onClick={fetchMovie}
-                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-xl transition-colors"
+                  onClick={() => fetchMovie()}
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 rounded-xl transition-colors"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Prossimo film

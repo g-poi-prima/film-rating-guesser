@@ -4,7 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { getOpenLobbies } from '../lib/api';
 import type { LobbyPublic } from '../types';
-import { Users, Trophy, RefreshCw, Plus, X } from 'lucide-react';
+import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle } from 'lucide-react';
 
 export default function LobbiesPage() {
   const { socket } = useSocket();
@@ -13,7 +13,12 @@ export default function LobbiesPage() {
   const [lobbies, setLobbies] = useState<LobbyPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', mode: 'ALL_VS_ALL' as 'ALL_VS_ALL' | 'TOURNAMENT', totalRounds: 5 });
+  const [form, setForm] = useState({
+    name: '',
+    mode: 'ALL_VS_ALL' as 'ALL_VS_ALL' | 'TOURNAMENT',
+    totalRounds: 5,
+    filmMode: 'popular' as 'popular' | 'any',
+  });
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
 
@@ -48,7 +53,7 @@ export default function LobbiesPage() {
   const createLobby = () => {
     if (!form.name.trim()) { setError('Inserisci un nome per la lobby'); return; }
     setError('');
-    socket?.emit('lobby:create', { name: form.name.trim(), mode: form.mode, totalRounds: form.totalRounds });
+    socket?.emit('lobby:create', { name: form.name.trim(), mode: form.mode, totalRounds: form.totalRounds, filmMode: form.filmMode });
   };
 
   const joinByCode = () => {
@@ -130,6 +135,30 @@ export default function LobbiesPage() {
                 ))}
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Film</label>
+              <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                {(['popular', 'any'] as const).map((fm) => (
+                  <button
+                    key={fm}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, filmMode: fm }))}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors ${
+                      form.filmMode === fm
+                        ? 'bg-primary text-white'
+                        : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    } ${fm === 'any' ? 'border-l border-gray-200 dark:border-gray-700' : ''}`}
+                  >
+                    {fm === 'popular' ? <Flame className="w-4 h-4" /> : <Shuffle className="w-4 h-4" />}
+                    {fm === 'popular' ? 'Film famosi' : 'Casuali'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {form.filmMode === 'popular' ? '≥ 1 000 voti su TMDB — tutti riconoscibili' : 'Qualsiasi film dal catalogo TMDB'}
+              </p>
+            </div>
+
             {form.mode === 'ALL_VS_ALL' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -216,6 +245,11 @@ export default function LobbiesPage() {
                   <span className="flex items-center gap-1">
                     <Trophy className="w-3 h-3" />
                     {lobby.totalRounds} round
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {lobby.filmMode === 'popular'
+                      ? <><Flame className="w-3 h-3 text-orange-400" />famosi</>
+                      : <><Shuffle className="w-3 h-3" />casuali</>}
                   </span>
                   <span className="font-mono text-gray-300 dark:text-gray-600">{lobby.code}</span>
                 </div>

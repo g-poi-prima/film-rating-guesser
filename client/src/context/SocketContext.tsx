@@ -65,6 +65,7 @@ export interface LobbyStatePayload {
   code: string;
   name: string;
   mode: 'ALL_VS_ALL' | 'TOURNAMENT';
+  filmMode: 'popular' | 'any';
   hostId: number;
   playerCount: number;
   players: LobbyPlayerState[];
@@ -134,7 +135,7 @@ interface ClientToServerEvents {
   'match:submit': (data: { matchId: number; userRating: number }) => void;
   'chat:send': (data: { content: string; receiverId?: number }) => void;
   'chat:get_history': (data: { receiverId?: number }) => void;
-  'lobby:create': (data: { name: string; mode: 'ALL_VS_ALL' | 'TOURNAMENT'; totalRounds?: number }) => void;
+  'lobby:create': (data: { name: string; mode: 'ALL_VS_ALL' | 'TOURNAMENT'; totalRounds?: number; filmMode?: 'popular' | 'any' }) => void;
   'lobby:join': (data: { code: string }) => void;
   'lobby:leave': (data: { code: string }) => void;
   'lobby:start': (data: { code: string }) => void;

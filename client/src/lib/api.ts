@@ -40,8 +40,8 @@ export async function getMe(): Promise<User> {
   return data;
 }
 
-export async function getRandomMovie(): Promise<RandomMovie> {
-  const { data } = await api.get('/games/random');
+export async function getRandomMovie(mode: 'popular' | 'any' = 'popular'): Promise<RandomMovie> {
+  const { data } = await api.get('/games/random', { params: { mode } });
   return data;
 }
 

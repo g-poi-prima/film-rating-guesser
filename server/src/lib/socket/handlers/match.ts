@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getRandomMovie } from "@/lib/tmdb";
+// Competitive 1v1 always uses popular mode so both players recognise the films
 import { calcScore } from "@/lib/scoring";
 import { TOTAL_ROUNDS, ROUND_TRANSITION_MS } from "@/constants";
 import {
@@ -29,7 +30,7 @@ export function registerMatchHandlers(
     const p2Id = matchQueue.shift()!;
 
     try {
-      const movieData = await getRandomMovie();
+      const movieData = await getRandomMovie("popular");
       const movie: MoviePayload = {
         id: movieData.id,
         title: movieData.title,
@@ -182,7 +183,7 @@ async function advanceRound(io: AppServer, matchId: number): Promise<void> {
   if (!room) return;
 
   try {
-    const next = await getRandomMovie();
+    const next = await getRandomMovie("popular");
     room.movie = { id: next.id, title: next.title, overview: next.overview, poster: next.poster };
     room.realRating = next.rating;
 

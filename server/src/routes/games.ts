@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { authenticate } from "@/middleware/auth";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import { getRandomMovie, getMovieById } from "@/lib/tmdb";
+import type { MovieMode } from "@/lib/tmdb";
 import { calcScore } from "@/lib/scoring";
 import { HISTORY_PAGE_SIZE } from "@/constants";
 import type { AuthRequest } from "@/middleware/auth";
@@ -14,9 +15,11 @@ router.use(authenticate);
 
 router.get(
   "/random",
-  asyncHandler(async (_req: AuthRequest, res) => {
+  asyncHandler(async (req: AuthRequest, res) => {
+    const raw = req.query.mode;
+    const mode: MovieMode = raw === "any" ? "any" : "popular";
     try {
-      const movie = await getRandomMovie();
+      const movie = await getRandomMovie(mode);
       res.json({ id: movie.id, title: movie.title, overview: movie.overview, poster: movie.poster });
     } catch {
       res.status(500).json({ error: "Errore nel recupero del film" });

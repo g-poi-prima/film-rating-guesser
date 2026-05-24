@@ -145,6 +145,7 @@ export interface LobbyPublic {
   code: string;
   name: string;
   mode: 'ALL_VS_ALL' | 'TOURNAMENT';
+  filmMode: 'popular' | 'any';
   hostId: number;
   playerCount: number;
   players: LobbyPlayer[];

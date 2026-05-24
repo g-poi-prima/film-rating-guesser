@@ -1,5 +1,7 @@
 // Shared in-memory lobby store – imported by both socket.ts and the REST route.
 
+export type FilmMode = "popular" | "any";
+
 export interface LobbyPlayer {
   userId: number;
   username: string;
@@ -12,6 +14,7 @@ export interface LobbyRoom {
   code: string;
   name: string;
   mode: "ALL_VS_ALL" | "TOURNAMENT";
+  filmMode: FilmMode;
   hostId: number;
   players: Map<number, LobbyPlayer>;
   status: "WAITING" | "IN_PROGRESS" | "FINISHED";
@@ -36,6 +39,7 @@ export function lobbyToPublic(room: LobbyRoom) {
     code: room.code,
     name: room.name,
     mode: room.mode,
+    filmMode: room.filmMode,
     hostId: room.hostId,
     playerCount: room.players.size,
     players: Array.from(room.players.values()).map((p) => ({
