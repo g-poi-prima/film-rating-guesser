@@ -2,6 +2,7 @@ import "module-alias/register";
 import dotenv from "dotenv";
 dotenv.config();
 
+import type { Request, Response, NextFunction } from "express";
 import { PORT } from "@/constants";
 import express from "express";
 import cors from "cors";
@@ -20,9 +21,7 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-app.get("/", (_, res) => {
-  res.send("Film Rating Guessr API");
-});
+app.get("/", (_req, res) => res.send("Film Rating Guessr API"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/games", gamesRoutes);
@@ -32,6 +31,14 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/matches", matchesRoutes);
 app.use("/api/friends", friendsRoutes);
 app.use("/api/lobbies", lobbiesRoutes);
+
+// ── Global error handler ──────────────────────────────────────────────────────
+// Catches any error forwarded via next(err) from asyncHandler-wrapped routes.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("[API error]", err);
+  res.status(500).json({ error: "Errore interno del server" });
+});
 
 const httpServer = createServer(app);
 setupSocket(httpServer);

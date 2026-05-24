@@ -2,6 +2,8 @@ import axios from "axios";
 import { getEnv } from "@/utils";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_TOTAL_PAGES = 500;
+const MAX_FETCH_ATTEMPTS = 5;
 
 const tmdb = axios.create({
   baseURL: TMDB_BASE,
@@ -25,45 +27,33 @@ export interface MovieData {
   rating: number;
 }
 
-export async function getRandomMovie(): Promise<MovieData> {
-  const totalPages = 500;
-
-  const page = Math.floor(Math.random() * totalPages) + 1;
-
-  const { data } = await tmdb.get("/movie/popular", {
-    params: { page },
-  });
-
-  const movies: TMDBMovie[] = data.results;
-  const movie = movies[Math.floor(Math.random() * movies.length)];
-
-  if (!movie) {
-    return getRandomMovie();
-  }
-
+function normalize(m: TMDBMovie): MovieData {
   return {
-    id: movie.id,
-    title: movie.title,
-    overview: movie.overview || "Nessuna descrizione disponibile.",
-    poster: movie.poster_path
-      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-      : null,
-    rating: movie.vote_average,
+    id: m.id,
+    title: m.title,
+    overview: m.overview || "Nessuna descrizione disponibile.",
+    poster: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
+    rating: m.vote_average,
   };
+}
+
+export async function getRandomMovie(): Promise<MovieData> {
+  for (let attempt = 0; attempt < MAX_FETCH_ATTEMPTS; attempt++) {
+    const page = Math.floor(Math.random() * TMDB_TOTAL_PAGES) + 1;
+    const { data } = await tmdb.get<{ results: TMDBMovie[] }>("/movie/popular", { params: { page } });
+    const movies = data.results;
+    if (movies.length > 0) {
+      const movie = movies[Math.floor(Math.random() * movies.length)];
+      if (movie) return normalize(movie);
+    }
+  }
+  throw new Error("Unable to fetch a random movie from TMDB after multiple attempts");
 }
 
 export async function getMovieById(id: number): Promise<MovieData | null> {
   try {
-    const { data } = await tmdb.get(`/movie/${id}`);
-    return {
-      id: data.id,
-      title: data.title,
-      overview: data.overview || "Nessuna descrizione disponibile.",
-      poster: data.poster_path
-        ? `https://image.tmdb.org/t/p/w500${data.poster_path}`
-        : null,
-      rating: data.vote_average,
-    };
+    const { data } = await tmdb.get<TMDBMovie>(`/movie/${id}`);
+    return normalize(data);
   } catch {
     return null;
   }

@@ -2,75 +2,93 @@ import { Router } from "express";
 import prisma from "@/lib/prisma";
 import { authenticate } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
+import { asyncHandler } from "@/middleware/asyncHandler";
 import type { AuthRequest } from "@/middleware/auth";
 
 const router = Router();
-
 router.use(authenticate, requireAdmin);
 
-router.get("/users", async (_req: AuthRequest, res) => {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      role: true,
-      avatar: true,
-      createdAt: true,
-      _count: { select: { games: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+// ── List users ────────────────────────────────────────────────────────────────
 
-  res.json(users);
-});
+router.get(
+  "/users",
+  asyncHandler(async (_req: AuthRequest, res) => {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        avatar: true,
+        createdAt: true,
+        _count: { select: { games: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(users);
+  })
+);
 
-router.put("/users/:id/role", async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id!);
-  const { role } = req.body;
+// ── Update role ───────────────────────────────────────────────────────────────
 
-  if (role !== "USER" && role !== "ADMIN") {
-    res.status(400).json({ error: "Ruolo non valido" });
-    return;
-  }
+router.put(
+  "/users/:id/role",
+  asyncHandler(async (req: AuthRequest, res) => {
+    const id = parseInt(req.params.id!);
+    const { role } = req.body as { role?: string };
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: { role },
-    select: { id: true, username: true, email: true, role: true },
-  });
+    if (role !== "USER" && role !== "ADMIN") {
+      res.status(400).json({ error: "Ruolo non valido" });
+      return;
+    }
 
-  res.json(user);
-});
+    const user = await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: { id: true, username: true, email: true, role: true },
+    });
+    res.json(user);
+  })
+);
 
-router.delete("/users/:id", async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id!);
+// ── Delete user (cascade) ─────────────────────────────────────────────────────
 
-  if (id === req.user!.id) {
-    res.status(400).json({ error: "Non puoi eliminare te stesso" });
-    return;
-  }
+router.delete(
+  "/users/:id",
+  asyncHandler(async (req: AuthRequest, res) => {
+    const id = parseInt(req.params.id!);
 
-  await prisma.$transaction(async (tx) => {
-    const matchIds = (await tx.match.findMany({
-      where: { OR: [{ player1Id: id }, { player2Id: id }] },
-      select: { id: true },
-    })).map((m) => m.id);
-    const customMatchIds = (await tx.customMatch.findMany({
-      where: { hostId: id },
-      select: { id: true },
-    })).map((m) => m.id);
-    await tx.matchRound.deleteMany({ where: { matchId: { in: matchIds } } });
-    await tx.customMatchResult.deleteMany({ where: { OR: [{ customMatchId: { in: customMatchIds } }, { userId: id }] } });
-    await tx.customMatch.deleteMany({ where: { id: { in: customMatchIds } } });
-    await tx.friendRequest.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
-    await tx.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
-    await tx.match.deleteMany({ where: { id: { in: matchIds } } });
-    await tx.game.deleteMany({ where: { userId: id } });
-    await tx.user.delete({ where: { id } });
-  });
+    if (id === req.user!.id) {
+      res.status(400).json({ error: "Non puoi eliminare te stesso" });
+      return;
+    }
 
-  res.json({ message: "Utente eliminato" });
-});
+    await prisma.$transaction(async (tx) => {
+      const matchIds = (
+        await tx.match.findMany({
+          where: { OR: [{ player1Id: id }, { player2Id: id }] },
+          select: { id: true },
+        })
+      ).map((m) => m.id);
+
+      const customMatchIds = (
+        await tx.customMatch.findMany({ where: { hostId: id }, select: { id: true } })
+      ).map((m) => m.id);
+
+      await tx.matchRound.deleteMany({ where: { matchId: { in: matchIds } } });
+      await tx.customMatchResult.deleteMany({
+        where: { OR: [{ customMatchId: { in: customMatchIds } }, { userId: id }] },
+      });
+      await tx.customMatch.deleteMany({ where: { id: { in: customMatchIds } } });
+      await tx.friendRequest.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
+      await tx.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
+      await tx.match.deleteMany({ where: { id: { in: matchIds } } });
+      await tx.game.deleteMany({ where: { userId: id } });
+      await tx.user.delete({ where: { id } });
+    });
+
+    res.json({ message: "Utente eliminato" });
+  })
+);
 
 export default router;
