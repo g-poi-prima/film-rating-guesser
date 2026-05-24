@@ -12,11 +12,14 @@ export interface AuthRequest extends Request {
   };
 }
 
+// Cache once at module load — avoids repeated env lookups on every request.
+const JWT_SECRET = getEnv("JWT_SECRET");
+
 export async function authenticate(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     res.status(401).json({ error: "Token non fornito" });
@@ -25,9 +28,7 @@ export async function authenticate(
 
   const token = header.slice(7);
   try {
-    const decoded = jwt.verify(token, getEnv("JWT_SECRET")) as {
-      id: number;
-    };
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { id: true, username: true, email: true, role: true },

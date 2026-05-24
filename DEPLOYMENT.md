@@ -8,6 +8,8 @@
 - Docker & Docker Compose
 - A TMDB **Read Access Token** — see note below
 
+> **NixOS?** A `flake.nix` is included in `server/`. Use `nix develop` before any `npm` or `prisma` command, or prepend `nix develop --command` to run commands directly (e.g. `nix develop --command npm run dev`). The flake provides `prisma-engines` and sets the required environment variables automatically.
+
 > **TMDB API key vs Read Access Token**
 > Go to https://www.themoviedb.org/settings/api and copy the **"API Read Access Token (v4 auth)"** — the long string starting with `eyJ...`.
 > Do **not** use the short "API Key (v3 auth)"; the server uses `Authorization: Bearer` which requires the v4 token.
@@ -21,6 +23,7 @@ docker-compose up -d
 ```
 
 This starts a PostgreSQL 15 container on port 5432 with:
+
 - user: `postgres`
 - password: `postgres`
 - database: `film_rating_guessr`
@@ -50,6 +53,8 @@ npm install
 
 `prisma generate` runs automatically via the `postinstall` script — no need to run it manually.
 
+> **NixOS:** Run `nix develop --command npm install` instead.
+
 ### 4. Run database migrations
 
 Only needed the first time, or after changes to `schema.prisma`:
@@ -57,6 +62,8 @@ Only needed the first time, or after changes to `schema.prisma`:
 ```bash
 npx prisma migrate dev --name init
 ```
+
+> **NixOS:** Run `nix develop --command npx prisma migrate dev --name init` instead.
 
 ### 5. Start the server
 
@@ -67,6 +74,8 @@ npm run dev
 # Or build + run
 npm run build && npm start
 ```
+
+> **NixOS:** Run `nix develop --command npm run dev` (or `nix develop` first, then `npm run dev`).
 
 Server runs on `http://localhost:3000`.
 
@@ -99,6 +108,8 @@ cd server
 npx prisma studio
 ```
 
+> **NixOS:** Run `nix develop --command npx prisma studio` instead.
+
 ---
 
 ## Production deployment
@@ -117,17 +128,17 @@ The client calls `/api/*` relative to its own origin. In production this means t
 
 1. Update `baseURL` in `client/src/lib/api.ts` if the backend is on a different domain:
    ```ts
-   const api = axios.create({ baseURL: 'https://your-backend.com/api' });
+   const api = axios.create({ baseURL: "https://your-backend.com/api" });
    ```
 2. Build command: `npm run build` (output: `dist/`)
 3. Add a rewrite rule so all paths serve `index.html` (required for React Router)
 
 ### Environment variables summary
 
-| Variable | Where | Description |
-|----------|-------|-------------|
-| `DATABASE_URL` | server | PostgreSQL connection string |
-| `JWT_SECRET` | server | Secret for signing JWTs — keep private |
-| `PORT` | server | HTTP port (default: 3000) |
+| Variable       | Where  | Description                                    |
+| -------------- | ------ | ---------------------------------------------- |
+| `DATABASE_URL` | server | PostgreSQL connection string                   |
+| `JWT_SECRET`   | server | Secret for signing JWTs — keep private         |
+| `PORT`         | server | HTTP port (default: 3000)                      |
 | `TMDB_API_KEY` | server | TMDB Read Access Token (v4, starts with `eyJ`) |
-| `NODE_ENV` | server | `development` or `production` |
+| `NODE_ENV`     | server | `development` or `production`                  |

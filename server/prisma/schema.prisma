@@ -18,6 +18,16 @@ enum MatchStatus {
   CANCELLED
 }
 
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+enum LobbyMode {
+  ALL_VS_ALL
+  TOURNAMENT
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   username  String   @unique
@@ -29,10 +39,14 @@ model User {
   updatedAt DateTime @updatedAt
 
   games            Game[]
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  matchesAsPlayer1 Match[]   @relation("Player1")
-  matchesAsPlayer2 Match[]   @relation("Player2")
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+  matchesAsPlayer1 Match[]         @relation("Player1")
+  matchesAsPlayer2 Match[]         @relation("Player2")
+  sentRequests     FriendRequest[] @relation("SentFriendRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  hostedLobbies    CustomMatch[]   @relation("LobbyHost")
+  lobbyResults     CustomMatchResult[]
 }
 
 model Game {
@@ -92,4 +106,45 @@ model Message {
 
   sender   User  @relation("SentMessages", fields: [senderId], references: [id])
   receiver User? @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model FriendRequest {
+  id         Int              @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     FriendshipStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+
+  sender   User @relation("SentFriendRequests", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model CustomMatch {
+  id          Int         @id @default(autoincrement())
+  code        String      @unique
+  name        String
+  mode        LobbyMode
+  hostId      Int
+  totalRounds Int         @default(5)
+  status      MatchStatus @default(WAITING)
+  createdAt   DateTime    @default(now())
+  endedAt     DateTime?
+
+  host    User                @relation("LobbyHost", fields: [hostId], references: [id])
+  results CustomMatchResult[]
+}
+
+model CustomMatchResult {
+  id            Int @id @default(autoincrement())
+  customMatchId Int
+  userId        Int
+  totalScore    Int @default(0)
+  rank          Int
+
+  match CustomMatch @relation(fields: [customMatchId], references: [id])
+  user  User        @relation(fields: [userId], references: [id])
+
+  @@unique([customMatchId, userId])
 }

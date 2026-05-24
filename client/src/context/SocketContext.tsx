@@ -52,6 +52,61 @@ export interface MessagePayload {
   receiverId: number | null;
 }
 
+// ── Lobby payload types ───────────────────────────────────────────────────────
+
+export interface LobbyPlayerState {
+  userId: number;
+  username: string;
+  totalScore: number;
+  eliminated: boolean;
+}
+
+export interface LobbyStatePayload {
+  code: string;
+  name: string;
+  mode: 'ALL_VS_ALL' | 'TOURNAMENT';
+  filmMode: 'popular' | 'any';
+  hostId: number;
+  playerCount: number;
+  players: LobbyPlayerState[];
+  status: 'WAITING' | 'IN_PROGRESS' | 'FINISHED';
+  currentRound: number;
+  totalRounds: number;
+}
+
+export interface LobbyRoundStartPayload {
+  code: string;
+  currentRound: number;
+  totalRounds: number;
+  movie: { id: number; title: string; overview: string; poster: string | null };
+  activePlayers: number;
+  mode: string;
+}
+
+export interface LobbyPlayerResult {
+  userId: number;
+  username: string;
+  rating: number;
+  roundScore: number;
+  totalScore: number;
+  eliminated: boolean;
+}
+
+export interface LobbyRoundResultPayload {
+  code: string;
+  roundNumber: number;
+  totalRounds: number;
+  realRating: number;
+  results: LobbyPlayerResult[];
+  eliminated: number[];
+  isLastRound: boolean;
+}
+
+export interface LobbyFinishedPayload {
+  code: string;
+  results: { userId: number; username: string; totalScore: number; rank: number }[];
+}
+
 // ── Socket types ──────────────────────────────────────────────────────────────
 
 interface ServerToClientEvents {
@@ -66,6 +121,12 @@ interface ServerToClientEvents {
   'match:opponent_disconnected': () => void;
   'chat:message': (msg: MessagePayload) => void;
   'chat:history': (msgs: MessagePayload[]) => void;
+  'lobby:state': (data: LobbyStatePayload) => void;
+  'lobby:error': (data: { message: string }) => void;
+  'lobby:round_start': (data: LobbyRoundStartPayload) => void;
+  'lobby:round_result': (data: LobbyRoundResultPayload) => void;
+  'lobby:finished': (data: LobbyFinishedPayload) => void;
+  'lobby:list': (lobbies: LobbyStatePayload[]) => void;
 }
 
 interface ClientToServerEvents {
@@ -74,6 +135,12 @@ interface ClientToServerEvents {
   'match:submit': (data: { matchId: number; userRating: number }) => void;
   'chat:send': (data: { content: string; receiverId?: number }) => void;
   'chat:get_history': (data: { receiverId?: number }) => void;
+  'lobby:create': (data: { name: string; mode: 'ALL_VS_ALL' | 'TOURNAMENT'; totalRounds?: number; filmMode?: 'popular' | 'any' }) => void;
+  'lobby:join': (data: { code: string }) => void;
+  'lobby:leave': (data: { code: string }) => void;
+  'lobby:start': (data: { code: string }) => void;
+  'lobby:submit': (data: { code: string; userRating: number }) => void;
+  'lobby:list': () => void;
 }
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
