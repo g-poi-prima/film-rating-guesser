@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import type { LobbyStatePayload, LobbyRoundStartPayload, LobbyRoundResultPayload, LobbyFinishedPayload } from '../context/SocketContext';
@@ -24,6 +24,8 @@ export default function LobbyPage() {
   const [userRating, setUserRating] = useState(5);
   const [countdown, setCountdown] = useState(4);
   const [errorMsg, setErrorMsg] = useState('');
+  // Used to distinguish a real unmount from React StrictMode's double-invocation
+  const mountedRef = useRef(false);
 
   // Countdown during round_result
   useEffect(() => {
@@ -35,9 +37,12 @@ export default function LobbyPage() {
 
   useEffect(() => {
     if (!socket || !code) return;
+    const key = code.toUpperCase();
 
-    // Join lobby on mount
-    socket.emit('lobby:join', { code: code.toUpperCase() });
+    // Mark as mounted and cancel any pending leave from a previous cleanup
+    mountedRef.current = true;
+
+    socket.emit('lobby:join', { code: key });
 
     const onState = (data: LobbyStatePayload) => {
       setLobbyState(data);
@@ -75,8 +80,16 @@ export default function LobbyPage() {
       socket.off('lobby:round_result', onRoundResult);
       socket.off('lobby:finished', onFinished);
       socket.off('lobby:error', onError);
-      // Leave lobby on unmount
-      socket.emit('lobby:leave', { code: code.toUpperCase() });
+
+      // Delay the leave so React StrictMode's immediate remount can cancel it.
+      // StrictMode runs cleanup + remount in <1 ms; a real navigation takes longer.
+      mountedRef.current = false;
+      const s = socket;
+      setTimeout(() => {
+        if (!mountedRef.current) {
+          s.emit('lobby:leave', { code: key });
+        }
+      }, 200);
     };
   }, [socket, code]);
 
