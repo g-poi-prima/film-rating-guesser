@@ -18,6 +18,7 @@ import ChatPage from './pages/ChatPage';
 import LobbiesPage from './pages/LobbiesPage';
 import LobbyPage from './pages/LobbyPage';
 import FriendsPage from './pages/FriendsPage';
+import HigherOrLowerPage from './pages/HigherOrLowerPage';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
                   <Route path="/lobbies" element={<ProtectedRoute><LobbiesPage /></ProtectedRoute>} />
                   <Route path="/lobby/:code" element={<ProtectedRoute><LobbyPage /></ProtectedRoute>} />
                   <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
+                  <Route path="/higher-lower" element={<ProtectedRoute><HigherOrLowerPage /></ProtectedRoute>} />
                 </Routes>
               </main>
             </BrowserRouter>

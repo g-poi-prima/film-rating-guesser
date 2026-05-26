@@ -1,11 +1,16 @@
 import { useState, useCallback } from 'react';
 import { getRandomMovie, submitGuess } from '../lib/api';
-import type { RandomMovie, GuessResult } from '../types';
+import type { RandomMovie, GuessResult } from '../types/index';
+import { useTheme } from '../context/ThemeContext';
+import PlayLateShow from './play/PlayLateShow';
+import PlayVerita from './play/PlayVerita';
+import PlayOverride from './play/PlayOverride';
 import { Film, Star, RefreshCw, PlayCircle, Flame, Shuffle } from 'lucide-react';
 
 type MovieMode = 'popular' | 'any';
 
 export default function PlayPage() {
+  const { theme } = useTheme();
   const [movie, setMovie] = useState<RandomMovie | null>(null);
   const [loading, setLoading] = useState(false);
   const [userRating, setUserRating] = useState(5);
@@ -50,6 +55,18 @@ export default function PlayPage() {
     }
   };
 
+  const viewProps = {
+    movie, loading, userRating, setUserRating,
+    result, showResult, error,
+    movieMode, setMovieMode, fetchMovie, handleGuess,
+  };
+
+  // ── Themed layouts ──────────────────────────────────────────────────────────
+  if (theme === 'late-show') return <PlayLateShow {...viewProps} />;
+  if (theme === 'verita')    return <PlayVerita {...viewProps} />;
+  if (theme === 'override')  return <PlayOverride {...viewProps} />;
+
+  // ── Default (studio-light / studio-dark) ────────────────────────────────────
   const scoreColor = (s: number) =>
     s >= 80 ? 'text-green-500' : s >= 60 ? 'text-yellow-500' : s >= 40 ? 'text-orange-500' : 'text-red-500';
 

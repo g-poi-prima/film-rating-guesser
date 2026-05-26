@@ -6,12 +6,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'https://film-rating-guessr-production.up.railway.app',
+      '/api': 'http://localhost:3000',
       '/socket.io': {
-        target: 'https://film-rating-guessr-production.up.railway.app',
+        target: 'http://localhost:3000',
         ws: true,
       },
     },
-    host: true
   },
 })
