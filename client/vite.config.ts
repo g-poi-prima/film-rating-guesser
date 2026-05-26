@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'http://film-rating-guessr-production.up.railway.app:3000',
+      '/api': 'https://film-rating-guessr-production.up.railway.app',
       '/socket.io': {
-        target: 'http://film-rating-guessr-production.up.railway.app:3000',
+        target: 'https://film-rating-guessr-production.up.railway.app',
         ws: true,
       },
     },
