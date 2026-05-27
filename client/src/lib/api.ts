@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory, FriendUser, FriendRequest, FriendStatusResult, LobbyPublic, UserProfile, LobbyHistoryEntry, MoviePair } from '../types';
+import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory, FriendUser, FriendRequest, FriendStatusResult, LobbyPublic, UserProfile, LobbyHistoryEntry } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -134,11 +134,6 @@ export async function acceptFriendRequest(id: number): Promise<FriendRequest> {
 
 export async function deleteFriendRequest(id: number): Promise<void> {
   await api.delete(`/friends/${id}`);
-}
-
-export async function getMoviePair(mode: 'popular' | 'any' = 'popular'): Promise<MoviePair> {
-  const { data } = await api.get('/games/pair', { params: { mode } });
-  return data;
 }
 
 // ── Lobbies ──────────────────────────────────────────────────────────────────

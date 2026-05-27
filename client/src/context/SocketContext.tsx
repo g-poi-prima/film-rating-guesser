@@ -61,6 +61,14 @@ export interface LobbyPlayerState {
   eliminated: boolean;
 }
 
+export interface LobbyChatMessage {
+  id: string;
+  userId: number;
+  username: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface LobbyStatePayload {
   code: string;
   name: string;
@@ -72,6 +80,7 @@ export interface LobbyStatePayload {
   status: 'WAITING' | 'IN_PROGRESS' | 'FINISHED';
   currentRound: number;
   totalRounds: number;
+  chatMessages: LobbyChatMessage[];
 }
 
 export interface LobbyRoundStartPayload {
@@ -127,6 +136,7 @@ interface ServerToClientEvents {
   'lobby:round_result': (data: LobbyRoundResultPayload) => void;
   'lobby:finished': (data: LobbyFinishedPayload) => void;
   'lobby:list': (lobbies: LobbyStatePayload[]) => void;
+  'lobby:chat': (msg: LobbyChatMessage) => void;
 }
 
 interface ClientToServerEvents {
@@ -141,6 +151,8 @@ interface ClientToServerEvents {
   'lobby:start': (data: { code: string }) => void;
   'lobby:submit': (data: { code: string; userRating: number }) => void;
   'lobby:list': () => void;
+  'lobby:chat': (data: { code: string; text: string }) => void;
+  'lobby:restart': (data: { code: string }) => void;
 }
 
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;

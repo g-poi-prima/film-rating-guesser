@@ -126,19 +126,6 @@ export interface UserProfile {
   friendCount: number;
 }
 
-export interface HLMovie {
-  id: number;
-  title: string;
-  overview: string;
-  poster: string | null;
-  rating: number;
-}
-
-export interface MoviePair {
-  movieA: HLMovie;
-  movieB: HLMovie;
-}
-
 export interface LobbyHistoryEntry {
   id: number;
   code: string;
