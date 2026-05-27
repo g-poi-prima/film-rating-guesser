@@ -62,6 +62,14 @@ export interface MessagePayload {
 
 // ── Lobby event payloads ──────────────────────────────────────────────────────
 
+export interface LobbyChatMessage {
+  id: string;
+  userId: number;
+  username: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface LobbyPublicPayload {
   code: string;
   name: string;
@@ -73,6 +81,7 @@ export interface LobbyPublicPayload {
   status: string;
   currentRound: number;
   totalRounds: number;
+  chatMessages: LobbyChatMessage[];
 }
 
 export interface LobbyRoundStartPayload {
@@ -128,6 +137,7 @@ export interface ServerToClientEvents {
   "lobby:round_result": (data: LobbyRoundResultPayload) => void;
   "lobby:finished": (data: LobbyFinishedPayload) => void;
   "lobby:list": (lobbies: LobbyPublicPayload[]) => void;
+  "lobby:chat": (msg: LobbyChatMessage) => void;
 }
 
 export interface ClientToServerEvents {
@@ -142,6 +152,8 @@ export interface ClientToServerEvents {
   "lobby:start": (data: { code: string }) => void;
   "lobby:submit": (data: { code: string; userRating: number }) => void;
   "lobby:list": () => void;
+  "lobby:chat": (data: { code: string; text: string }) => void;
+  "lobby:restart": (data: { code: string }) => void;
 }
 
 export type AppServer = Server<
