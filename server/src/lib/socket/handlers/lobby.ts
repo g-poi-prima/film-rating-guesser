@@ -46,7 +46,6 @@ export function registerLobbyHandlers(
       movie: null,
       realRating: 0,
       dbMatchId: dbMatch.id,
-      chatMessages: [],
     });
 
     await socket.join(`lobby:${code}`);
@@ -63,14 +62,11 @@ export function registerLobbyHandlers(
       socket.emit("lobby:error", { message: "Lobby non trovata" });
       return;
     }
-
-    // Reject joining an in-progress game if not already a player
-    if (lobby.status === "IN_PROGRESS" && !lobby.players.has(user.id)) {
-      socket.emit("lobby:error", { message: "La partita è già in corso" });
+    if (lobby.status !== "WAITING") {
+      socket.emit("lobby:error", { message: "La lobby è già iniziata" });
       return;
     }
 
-    // Add player if not already present (WAITING or FINISHED)
     if (!lobby.players.has(user.id)) {
       lobby.players.set(user.id, {
         userId: user.id,
@@ -197,69 +193,6 @@ export function registerLobbyHandlers(
       await advanceLobbyRound(io, key);
     }
   });
-
-  // ── Chat ─────────────────────────────────────────────────────────────────────
-
-  socket.on("lobby:chat", ({ code, text }) => {
-    const key = code.toUpperCase();
-    const lobby = lobbies.get(key);
-    if (!lobby) return;
-    if (!lobby.players.has(user.id)) return;
-    const trimmed = text.trim().slice(0, 500);
-    if (!trimmed) return;
-
-    const msg = {
-      id: Math.random().toString(36).slice(2, 10),
-      userId: user.id,
-      username: user.username,
-      text: trimmed,
-      createdAt: new Date().toISOString(),
-    };
-    lobby.chatMessages.push(msg);
-    if (lobby.chatMessages.length > 200) {
-      lobby.chatMessages = lobby.chatMessages.slice(-200);
-    }
-
-    io.to(`lobby:${key}`).emit("lobby:chat", msg);
-  });
-
-  // ── Restart lobby (host only, FINISHED state) ─────────────────────────────
-
-  socket.on("lobby:restart", async ({ code }) => {
-    const key = code.toUpperCase();
-    const lobby = lobbies.get(key);
-
-    if (!lobby) { socket.emit("lobby:error", { message: "Lobby non trovata" }); return; }
-    if (lobby.hostId !== user.id) { socket.emit("lobby:error", { message: "Solo l'host può riavviare" }); return; }
-    if (lobby.status !== "FINISHED") return;
-
-    // Create a new DB entry with a unique code (old one is COMPLETED)
-    const dbCode = `${key}_${Date.now().toString(36).toUpperCase()}`;
-    const newMatch = await prisma.customMatch.create({
-      data: {
-        code: dbCode,
-        name: lobby.name,
-        mode: lobby.mode,
-        hostId: lobby.hostId,
-        totalRounds: lobby.totalRounds,
-      },
-    });
-
-    // Reset lobby to WAITING
-    lobby.status = "WAITING";
-    lobby.currentRound = 0;
-    lobby.movie = null;
-    lobby.realRating = 0;
-    lobby.dbMatchId = newMatch.id;
-
-    for (const p of lobby.players.values()) {
-      p.totalScore = 0;
-      p.eliminated = false;
-      p.submittedRating = null;
-    }
-
-    io.to(`lobby:${key}`).emit("lobby:state", lobbyToPublic(lobby));
-  });
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -295,8 +228,8 @@ async function finishLobby(io: AppServer, code: string): Promise<void> {
     data: { status: "COMPLETED", endedAt: new Date() },
   });
 
-  // Lobby stays in memory until all players voluntarily leave
   io.to(`lobby:${code}`).emit("lobby:finished", { code, results: finalResults });
+  lobbies.delete(code);
 }
 
 async function advanceLobbyRound(io: AppServer, code: string): Promise<void> {
@@ -331,21 +264,6 @@ async function leaveLobby(
   lobby.players.delete(userId);
   socket.leave(`lobby:${code}`);
 
-  // FINISHED: no DB update needed, just clean up memory
-  if (lobby.status === "FINISHED") {
-    if (lobby.players.size === 0) {
-      lobbies.delete(code);
-    } else {
-      // Transfer host if the host left
-      if (lobby.hostId === userId) {
-        lobby.hostId = lobby.players.values().next().value!.userId;
-      }
-      io.to(`lobby:${code}`).emit("lobby:state", lobbyToPublic(lobby));
-    }
-    return;
-  }
-
-  // WAITING / IN_PROGRESS: cancel if empty or host leaves
   if (lobby.players.size === 0 || lobby.hostId === userId) {
     await prisma.customMatch.update({
       where: { id: lobby.dbMatchId! },
@@ -365,20 +283,6 @@ export async function handleLobbyDisconnect(io: AppServer, userId: number): Prom
 
     lobby.players.delete(userId);
 
-    // FINISHED: just clean up memory, DB is already COMPLETED
-    if (lobby.status === "FINISHED") {
-      if (lobby.players.size === 0) {
-        lobbies.delete(code);
-      } else {
-        if (lobby.hostId === userId) {
-          lobby.hostId = lobby.players.values().next().value!.userId;
-        }
-        io.to(`lobby:${code}`).emit("lobby:state", lobbyToPublic(lobby));
-      }
-      continue;
-    }
-
-    // WAITING: cancel if host disconnects or lobby is empty
     if (lobby.players.size === 0 || (lobby.hostId === userId && lobby.status === "WAITING")) {
       await prisma.customMatch.update({
         where: { id: lobby.dbMatchId! },

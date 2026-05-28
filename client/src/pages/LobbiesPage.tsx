@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { useLobby } from '../context/LobbyContext';
 import { getOpenLobbies } from '../lib/api';
 import type { LobbyPublic } from '../types';
-import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle, ArrowRight } from 'lucide-react';
+import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle } from 'lucide-react';
 
 export default function LobbiesPage() {
   const { socket } = useSocket();
   const { user } = useAuth();
-  const { createLobby, joinLobby, lobbyState, phase, leaveLobby } = useLobby();
+  const navigate = useNavigate();
   const [lobbies, setLobbies] = useState<LobbyPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -32,74 +31,41 @@ export default function LobbiesPage() {
 
   useEffect(() => { load(); }, []);
 
-  // ── Already in a lobby — show a redirect notice instead of the full page ──
-  if (lobbyState && phase !== 'idle' && phase !== 'error') {
-    const phaseLabel: Record<string, string> = {
-      waiting: 'in attesa',
-      playing: 'in corso',
-      submitted: 'in corso',
-      round_result: 'in corso',
-      finished: 'terminata',
-    };
-    return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center space-y-6">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-10 space-y-5">
-          <Users className="w-14 h-14 text-primary mx-auto" />
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Sei già in una lobby
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              <span className="font-medium text-gray-700 dark:text-gray-300">{lobbyState.name}</span>
-              {' — partita '}
-              {phaseLabel[phase] ?? phase}
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <Link
-              to={`/lobby/${lobbyState.code}`}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
-            >
-              Torna alla lobby
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <button
-              onClick={leaveLobby}
-              className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm"
-            >
-              Esci e cerca un'altra lobby
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Listen for lobby:error while on this page (join/create failures)
-  // LobbyContext only handles errors when already inside a lobby session
+  // Listen for lobby:state after create/join to navigate in
   useEffect(() => {
     if (!socket) return;
-    const onError = (data: { message: string }) => setError(data.message);
-    socket.on('lobby:error', onError);
-    return () => { socket.off('lobby:error', onError); };
-  }, [socket]);
 
-  const handleCreate = () => {
+    const onState = (data: { code: string }) => {
+      navigate(`/lobby/${data.code}`);
+    };
+    const onError = (data: { message: string }) => {
+      setError(data.message);
+    };
+
+    socket.on('lobby:state', onState);
+    socket.on('lobby:error', onError);
+    return () => {
+      socket.off('lobby:state', onState);
+      socket.off('lobby:error', onError);
+    };
+  }, [socket, navigate]);
+
+  const createLobby = () => {
     if (!form.name.trim()) { setError('Inserisci un nome per la lobby'); return; }
     setError('');
-    createLobby({ name: form.name.trim(), mode: form.mode, totalRounds: form.totalRounds, filmMode: form.filmMode });
+    socket?.emit('lobby:create', { name: form.name.trim(), mode: form.mode, totalRounds: form.totalRounds, filmMode: form.filmMode });
   };
 
-  const handleJoinByCode = () => {
+  const joinByCode = () => {
     const code = joinCode.trim().toUpperCase();
     if (!code) { setError('Inserisci un codice lobby'); return; }
     setError('');
-    joinLobby(code);
+    socket?.emit('lobby:join', { code });
   };
 
-  const handleJoinLobby = (code: string) => {
+  const joinLobby = (code: string) => {
     setError('');
-    joinLobby(code);
+    socket?.emit('lobby:join', { code });
   };
 
   return (
@@ -115,11 +81,7 @@ export default function LobbiesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={load}
-            className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            title="Aggiorna"
-          >
+          <button onClick={load} className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Aggiorna">
             <RefreshCw className="w-4 h-4 text-gray-500" />
           </button>
           <button
@@ -138,9 +100,7 @@ export default function LobbiesPage() {
           <h2 className="font-semibold text-gray-900 dark:text-white">Nuova lobby</h2>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nome
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome</label>
               <input
                 type="text"
                 value={form.name}
@@ -151,9 +111,7 @@ export default function LobbiesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Modalità
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modalità</label>
               <div className="grid grid-cols-2 gap-3">
                 {(['ALL_VS_ALL', 'TOURNAMENT'] as const).map((m) => (
                   <button
@@ -178,9 +136,7 @@ export default function LobbiesPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Film
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Film</label>
               <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {(['popular', 'any'] as const).map((fm) => (
                   <button
@@ -199,9 +155,7 @@ export default function LobbiesPage() {
                 ))}
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                {form.filmMode === 'popular'
-                  ? '≥ 1 000 voti su TMDB — tutti riconoscibili'
-                  : 'Qualsiasi film dal catalogo TMDB'}
+                {form.filmMode === 'popular' ? '≥ 1 000 voti su TMDB — tutti riconoscibili' : 'Qualsiasi film dal catalogo TMDB'}
               </p>
             </div>
 
@@ -212,23 +166,20 @@ export default function LobbiesPage() {
                 </label>
                 <input
                   type="range"
-                  min={3}
-                  max={10}
-                  step={1}
+                  min={3} max={10} step={1}
                   value={form.totalRounds}
                   onChange={(e) => setForm((f) => ({ ...f, totalRounds: parseInt(e.target.value) }))}
                   className="w-full accent-primary"
                 />
                 <div className="flex justify-between text-xs text-gray-400 mt-0.5">
-                  <span>3</span>
-                  <span>10</span>
+                  <span>3</span><span>10</span>
                 </div>
               </div>
             )}
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button
-            onClick={handleCreate}
+            onClick={createLobby}
             className="w-full py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
           >
             Crea e unisciti
@@ -248,7 +199,7 @@ export default function LobbiesPage() {
             maxLength={6}
           />
           <button
-            onClick={handleJoinByCode}
+            onClick={joinByCode}
             className="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors flex-shrink-0"
           >
             Unisciti
@@ -278,13 +229,11 @@ export default function LobbiesPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-semibold text-gray-900 dark:text-white truncate">{lobby.name}</p>
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
-                      lobby.mode === 'ALL_VS_ALL'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                        : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                    }`}
-                  >
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                    lobby.mode === 'ALL_VS_ALL'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                      : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                  }`}>
                     {lobby.mode === 'ALL_VS_ALL' ? 'Tutti vs tutti' : 'Torneo'}
                   </span>
                 </div>
@@ -298,17 +247,15 @@ export default function LobbiesPage() {
                     {lobby.totalRounds} round
                   </span>
                   <span className="flex items-center gap-1">
-                    {lobby.filmMode === 'popular' ? (
-                      <><Flame className="w-3 h-3 text-orange-400" />famosi</>
-                    ) : (
-                      <><Shuffle className="w-3 h-3" />casuali</>
-                    )}
+                    {lobby.filmMode === 'popular'
+                      ? <><Flame className="w-3 h-3 text-orange-400" />famosi</>
+                      : <><Shuffle className="w-3 h-3" />casuali</>}
                   </span>
                   <span className="font-mono text-gray-300 dark:text-gray-600">{lobby.code}</span>
                 </div>
               </div>
               <button
-                onClick={() => handleJoinLobby(lobby.code)}
+                onClick={() => joinLobby(lobby.code)}
                 disabled={lobby.players.some((p) => p.userId === user?.id)}
                 className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >

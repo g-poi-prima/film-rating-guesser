@@ -71,6 +71,25 @@ router.post(
   })
 );
 
+// ── Movie pair for Higher-or-Lower ───────────────────────────────────────────
+
+router.get(
+  "/pair",
+  asyncHandler(async (req: AuthRequest, res) => {
+    const raw = req.query.mode;
+    const mode: MovieMode = raw === "any" ? "any" : "popular";
+    try {
+      const [a, b] = await Promise.all([getRandomMovie(mode), getRandomMovie(mode)]);
+      res.json({
+        movieA: { id: a.id, title: a.title, overview: a.overview, poster: a.poster, rating: a.rating },
+        movieB: { id: b.id, title: b.title, overview: b.overview, poster: b.poster, rating: b.rating },
+      });
+    } catch {
+      res.status(500).json({ error: "Errore nel recupero dei film" });
+    }
+  })
+);
+
 // ── History (paginated) ───────────────────────────────────────────────────────
 
 router.get(
