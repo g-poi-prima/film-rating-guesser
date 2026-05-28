@@ -223,7 +223,7 @@ export default function HigherOrLowerPage() {
       )}
 
       {/* ── Main content area ── */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-4 md:px-8 py-4">
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4 md:px-8 py-4 relative">
 
         {/* START */}
         {phase === 'start' && (
@@ -297,18 +297,40 @@ export default function HigherOrLowerPage() {
               <MovieCard movie={pair.movieB} side="B" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
             </div>
 
-            {/* Reveal CTA */}
-            {phase === 'reveal' && lives > 0 && (
-              <div className="flex-shrink-0 flex justify-center pb-1">
-                <button onClick={handleNext} disabled={advancing} className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-2.5 rounded-xl transition-colors disabled:opacity-60">
-                  <Film className="w-4 h-4" />
-                  {advancing ? 'Caricamento…' : 'Prossima coppia'}
-                </button>
-              </div>
-            )}
             {phase === 'reveal' && lives <= 0 && (
               <div className="flex-shrink-0 text-center pb-1 text-sm text-gray-400">Calcolo risultato…</div>
             )}
+          </div>
+        )}
+
+        {/* ── Reveal overlay — centered modal with blurred backdrop ── */}
+        {phase === 'reveal' && lives > 0 && (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-center"
+            style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.22)' }}
+          >
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl px-10 py-8 text-center space-y-4 mx-4 w-full max-w-xs">
+              <div className="text-5xl">
+                {winner === 'tie' ? '🟡' : winner === selected ? '✅' : '❌'}
+              </div>
+              <div className={`text-lg font-bold ${
+                winner === 'tie' ? 'text-yellow-500' : winner === selected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {revealMsg()}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Differenza di voto:{' '}
+                <strong className="text-gray-700 dark:text-gray-300 tabular-nums">{ratingDiff}</strong>
+              </div>
+              <button
+                onClick={handleNext}
+                disabled={advancing}
+                className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-xl transition-colors disabled:opacity-60"
+              >
+                <Film className="w-4 h-4" />
+                {advancing ? 'Caricamento…' : 'Prossima coppia'}
+              </button>
+            </div>
           </div>
         )}
 

@@ -36,17 +36,16 @@ export default function PlayVerita({ movie, loading, userRating, setUserRating, 
 
   return (
     <div style={{
-      height: 'calc(100vh - 64px)',
+      minHeight: 'calc(100vh - 64px)',
       display: 'flex',
       flexDirection: 'column',
       background: C.paper,
       color: C.ink,
       fontFamily: FONT_BODY,
-      overflow: 'hidden',
     }}>
       {/* content wrapper */}
       <div style={{
-        flex: 1, minHeight: 0,
+        flex: 1,
         maxWidth: 1200, margin: '0 auto', width: '100%',
         padding: '32px 48px 40px',
         display: 'flex', flexDirection: 'column',
@@ -149,7 +148,7 @@ export default function PlayVerita({ movie, loading, userRating, setUserRating, 
         {/* ── PLAYING ── */}
         {movie && !showResult && !loading && (
           <div style={{
-            flex: 1, minHeight: 0,
+            height: 'calc(100vh - 136px)',  /* 64 navbar + 32 pt + 40 pb = 136 */
             display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 48,
           }}>
 
@@ -311,7 +310,7 @@ export default function PlayVerita({ movie, loading, userRating, setUserRating, 
 
         {/* ── RESULT ── */}
         {showResult && result && movie && (
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '40px 0' }}>
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center',
               width: '100%', maxWidth: 960, margin: '0 auto',
@@ -322,7 +321,7 @@ export default function PlayVerita({ movie, loading, userRating, setUserRating, 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginTop: 6 }}>
                   <span style={{
                     fontFamily: FONT_DISPLAY,
-                    fontSize: 220, lineHeight: 0.82,
+                    fontSize: 'clamp(80px, 15vw, 180px)', lineHeight: 0.82,
                     color: C.cherry, letterSpacing: -8,
                   }}>{result.score}</span>
                   <span style={{ fontFamily: FONT_MONO, fontSize: 14, color: C.muted, marginTop: 18 }}>/ 100</span>
