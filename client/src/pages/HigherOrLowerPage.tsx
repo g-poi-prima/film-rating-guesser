@@ -1,13 +1,20 @@
 import { useState, useCallback } from 'react';
 import { getMoviePair } from '../lib/api';
 import type { HLMovie, MoviePair } from '../types/index';
-import { Film, Heart, Flame, Shuffle, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import { Film, Heart, Flame, Shuffle, ChevronUp, ChevronDown, Minus, ArrowRight } from 'lucide-react';
 
-type Phase = 'start' | 'loading' | 'playing' | 'reveal' | 'gameover';
-type Guess = 'A' | 'B';
+type Phase  = 'start' | 'loading' | 'playing' | 'reveal' | 'gameover';
+type Guess  = 'A' | 'B';
 type Winner = 'A' | 'B' | 'tie';
 
 const MAX_LIVES = 3;
+
+function ratingColor(r: number) {
+  if (r >= 7.5) return 'text-green-400';
+  if (r >= 6.0) return 'text-yellow-400';
+  if (r >= 5.0) return 'text-orange-400';
+  return 'text-red-400';
+}
 
 function scoreColor(s: number) {
   if (s >= 10) return 'text-purple-500';
@@ -15,6 +22,8 @@ function scoreColor(s: number) {
   if (s >= 4)  return 'text-yellow-500';
   return 'text-primary';
 }
+
+// ── Movie Card ────────────────────────────────────────────────────────────────
 
 function MovieCard({
   movie, side, phase, selected, winner, onPick,
@@ -28,84 +37,84 @@ function MovieCard({
   const isCorrect  = isRevealed && isSelected && isWinner;
   const isWrong    = isRevealed && isSelected && !isWinner;
 
-  const ratingColor =
-    movie.rating >= 7.5 ? 'text-green-500' :
-    movie.rating >= 6.0 ? 'text-yellow-500' :
-    movie.rating >= 5.0 ? 'text-orange-500' : 'text-red-500';
-
-  let border = 'border-gray-200 dark:border-gray-800';
-  if (!isRevealed && isSelected)          border = 'border-primary ring-2 ring-primary/20';
-  if (!isRevealed && !isSelected)         border = 'border-gray-200 dark:border-gray-800';
-  if (isRevealed && isCorrect)            border = 'border-green-500 ring-2 ring-green-400/30';
-  if (isRevealed && isWrong)              border = 'border-red-500   ring-2 ring-red-400/30';
-  if (isRevealed && !isSelected && isWinner && winner !== 'tie') border = 'border-green-400/60';
+  // Border ring
+  let ring = '';
+  if (!isRevealed && isSelected)               ring = 'ring-4 ring-primary';
+  if (isRevealed && isCorrect)                 ring = 'ring-4 ring-green-500';
+  if (isRevealed && isWrong)                   ring = 'ring-4 ring-red-500';
+  if (isRevealed && !isSelected && isWinner && winner !== 'tie') ring = 'ring-2 ring-green-400/50';
 
   return (
     <div
       onClick={() => phase === 'playing' && onPick(side)}
-      className={`flex-1 flex flex-col rounded-2xl border-2 bg-white dark:bg-gray-900 overflow-hidden transition-all duration-200 ${border} ${phase === 'playing' ? 'cursor-pointer select-none hover:shadow-lg' : ''}`}
+      className={`
+        relative flex-1 rounded-2xl overflow-hidden shadow-md bg-gray-900
+        transition-all duration-200
+        ${ring}
+        ${phase === 'playing' ? 'cursor-pointer hover:scale-[1.015] hover:shadow-xl active:scale-[0.99]' : ''}
+      `}
     >
-      {/* Poster — fills available height */}
-      <div className="relative flex-1 min-h-0 overflow-hidden bg-gray-100 dark:bg-gray-800">
-        {movie.poster ? (
-          <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600">
-            <Film className="w-12 h-12" />
-          </div>
-        )}
+      {/* Poster */}
+      {movie.poster ? (
+        <img
+          src={movie.poster}
+          alt={movie.title}
+          className="absolute inset-0 w-full h-full object-cover"
+          draggable={false}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+          <Film className="w-16 h-16 text-gray-600" />
+        </div>
+      )}
 
-        {/* Rating badge on reveal */}
-        {isRevealed && (
-          <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 px-5 py-2 rounded-full font-black text-2xl tabular-nums text-white shadow-xl pointer-events-none ${
-            (isWinner && winner !== 'tie') ? 'bg-green-500' : winner === 'tie' ? 'bg-yellow-500' : 'bg-gray-600'
-          }`}>
-            {movie.rating.toFixed(1)}
-          </div>
-        )}
-
-        {/* Outcome overlay */}
-        {isRevealed && isSelected && (
-          <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${isCorrect ? 'bg-green-500/15' : 'bg-red-500/15'}`}>
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-black text-3xl shadow-lg ${isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
-              {isCorrect ? '✓' : '✗'}
-            </div>
-          </div>
-        )}
-
-        {/* "Higher" tag for unselected winner */}
-        {isRevealed && !isSelected && winner === side && winner !== 'tie' && (
-          <div className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg pointer-events-none">
-            ↑ PIÙ ALTO
-          </div>
-        )}
+      {/* Bottom gradient + title */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-4 px-4 pointer-events-none">
+        <h2 className="text-white font-bold text-base leading-snug line-clamp-2 drop-shadow">
+          {movie.title}
+        </h2>
       </div>
 
-      {/* Info — fixed height footer */}
-      <div className="flex-shrink-0 p-4 border-t border-gray-100 dark:border-gray-800">
-        <h2 className="font-bold text-base leading-tight line-clamp-2">{movie.title}</h2>
-        {isRevealed && (
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs text-gray-400">Voto TMDB</span>
-            <span className={`text-2xl font-black tabular-nums ${ratingColor}`}>
-              {movie.rating.toFixed(1)}
-            </span>
+      {/* Rating badge — always visible on reveal */}
+      {isRevealed && (
+        <div className={`
+          absolute top-3 right-3 rounded-xl px-3 py-1.5 font-black text-xl tabular-nums shadow-lg pointer-events-none
+          ${isWinner && winner !== 'tie' ? 'bg-green-500 text-white' : winner === 'tie' ? 'bg-yellow-500 text-white' : 'bg-black/70 text-white'}
+        `}>
+          ★ {movie.rating.toFixed(1)}
+        </div>
+      )}
+
+      {/* Outcome overlay */}
+      {isRevealed && isSelected && (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${isCorrect ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-black text-4xl shadow-xl border-4 ${isCorrect ? 'bg-green-500 border-green-300' : 'bg-red-500 border-red-300'}`}>
+            {isCorrect ? '✓' : '✗'}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* "Più alto" tag for unselected winner */}
+      {isRevealed && !isSelected && winner === side && (
+        <div className="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg pointer-events-none shadow">
+          ↑ PIÙ ALTO
+        </div>
+      )}
     </div>
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function HigherOrLowerPage() {
-  const [phase, setPhase]   = useState<Phase>('start');
-  const [pair, setPair]     = useState<MoviePair | null>(null);
-  const [lives, setLives]   = useState(MAX_LIVES);
-  const [score, setScore]   = useState(0);
-  const [selected, setSelected] = useState<Guess | null>(null);
-  const [winner, setWinner]     = useState<Winner | null>(null);
+  const [phase, setPhase]         = useState<Phase>('start');
+  const [pair, setPair]           = useState<MoviePair | null>(null);
+  const [lives, setLives]         = useState(MAX_LIVES);
+  const [score, setScore]         = useState(0);
+  const [selected, setSelected]   = useState<Guess | null>(null);
+  const [winner, setWinner]       = useState<Winner | null>(null);
   const [movieMode, setMovieMode] = useState<'popular' | 'any'>('popular');
-  const [error, setError]   = useState('');
+  const [error, setError]         = useState('');
   const [advancing, setAdvancing] = useState(false);
 
   const loadPair = useCallback(async (mode?: 'popular' | 'any') => {
@@ -115,8 +124,7 @@ export default function HigherOrLowerPage() {
     setAdvancing(false);
     setError('');
     try {
-      const data = await getMoviePair(mode ?? movieMode);
-      setPair(data);
+      setPair(await getMoviePair(mode ?? movieMode));
       setPhase('playing');
     } catch {
       setError('Errore nel caricamento dei film. Riprova.');
@@ -141,14 +149,13 @@ export default function HigherOrLowerPage() {
     else                                    w = 'tie';
 
     setWinner(w);
-    const correct   = w === 'tie' || w === guess;
-    const newLives  = correct ? lives : lives - 1;
-    const newScore  = correct ? score + 1 : score;
+    const correct  = w === 'tie' || w === guess;
+    const newLives = correct ? lives : lives - 1;
     setLives(newLives);
-    setScore(newScore);
+    setScore((s) => correct ? s + 1 : s);
     setPhase('reveal');
 
-    if (newLives <= 0) setTimeout(() => setPhase('gameover'), 2000);
+    if (newLives <= 0) setTimeout(() => setPhase('gameover'), 2200);
   };
 
   const handleNext = () => {
@@ -159,20 +166,14 @@ export default function HigherOrLowerPage() {
 
   const revealMsg = () => {
     if (!selected || !winner) return '';
-    const correct = winner === 'tie' || winner === selected;
     if (winner === 'tie') return '🟡 Pareggio! Punto bonus!';
-    return correct ? '✅ Corretto!' : '❌ Sbagliato!';
+    return winner === selected ? '✅ Corretto!' : '❌ Sbagliato!';
   };
 
-  const ratingDiff = pair
-    ? Math.abs(pair.movieA.rating - pair.movieB.rating).toFixed(1)
-    : '—';
-
-  // ── Page wrapper: always full viewport height ────────────────────────────
   return (
     <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
 
-      {/* ── Header (always visible) ── */}
+      {/* ── Header ── */}
       <div className="flex-shrink-0 px-4 md:px-8 pt-5 pb-3 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between max-w-5xl mx-auto">
           <div>
@@ -186,7 +187,6 @@ export default function HigherOrLowerPage() {
             </p>
           </div>
 
-          {/* Lives + score — only when playing/reveal */}
           {(phase === 'playing' || phase === 'reveal') && (
             <div className="flex items-center gap-4">
               <div className="flex gap-1">
@@ -196,18 +196,8 @@ export default function HigherOrLowerPage() {
                   }`} />
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                {phase === 'reveal' && winner && (
-                  <span className={`text-sm font-semibold ${
-                    winner === 'tie' ? 'text-yellow-500' : winner === selected ? 'text-green-500' : 'text-red-500'
-                  }`}>{revealMsg()}</span>
-                )}
-                {phase === 'playing' && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Quale ha il voto più alto?</span>
-                )}
-                <div className="bg-primary/10 text-primary rounded-xl px-4 py-1 font-black text-2xl tabular-nums min-w-[3rem] text-center">
-                  {score}
-                </div>
+              <div className="bg-primary/10 text-primary rounded-xl px-4 py-1 font-black text-2xl tabular-nums min-w-[3rem] text-center">
+                {score}
               </div>
             </div>
           )}
@@ -215,19 +205,19 @@ export default function HigherOrLowerPage() {
       </div>
 
       {error && (
-        <div className="flex-shrink-0 mx-4 md:mx-8 mt-3 max-w-5xl mx-auto">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 text-sm p-3 rounded-xl">
+        <div className="flex-shrink-0 px-4 md:px-8 mt-3">
+          <div className="max-w-5xl mx-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 text-sm p-3 rounded-xl">
             {error}
           </div>
         </div>
       )}
 
-      {/* ── Main content area ── */}
+      {/* ── Main ── */}
       <div className="flex-1 min-h-0 flex items-center justify-center px-4 md:px-8 py-4 relative">
 
         {/* START */}
         {phase === 'start' && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center space-y-5 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center space-y-5 w-full max-w-md shadow-sm">
             <div className="flex items-center justify-center gap-3">
               <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center">
                 <ChevronUp className="w-7 h-7 text-green-500" />
@@ -244,12 +234,15 @@ export default function HigherOrLowerPage() {
               </p>
             </div>
             <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <button onClick={() => setMovieMode('popular')} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${movieMode === 'popular' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                <Flame className="w-4 h-4" /> Famosi
-              </button>
-              <button onClick={() => setMovieMode('any')} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-l border-gray-200 dark:border-gray-700 ${movieMode === 'any' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
-                <Shuffle className="w-4 h-4" /> Casuali
-              </button>
+              {(['popular', 'any'] as const).map((m, i) => (
+                <button
+                  key={m}
+                  onClick={() => setMovieMode(m)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${i > 0 ? 'border-l border-gray-200 dark:border-gray-700' : ''} ${movieMode === m ? 'bg-primary text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                >
+                  {m === 'popular' ? <><Flame className="w-4 h-4" /> Famosi</> : <><Shuffle className="w-4 h-4" /> Casuali</>}
+                </button>
+              ))}
             </div>
             <button onClick={handleStart} className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-3 rounded-xl transition-colors">
               <ChevronUp className="w-5 h-5" /> Inizia
@@ -264,64 +257,69 @@ export default function HigherOrLowerPage() {
 
         {/* PLAYING / REVEAL */}
         {(phase === 'playing' || phase === 'reveal') && pair && (
-          <div className="w-full max-w-5xl flex flex-col gap-3 h-full">
-            {/* Cards row — fills remaining space */}
-            <div className="flex gap-3 flex-1 min-h-0">
-              <MovieCard movie={pair.movieA} side="A" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
+          <div className="w-full max-w-5xl flex gap-4 h-full">
+            <MovieCard movie={pair.movieA} side="A" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
 
-              {/* VS divider */}
-              <div className="flex flex-col items-center justify-between flex-shrink-0 w-10 py-2">
-                <div className="flex-1 w-px bg-gray-200 dark:bg-gray-700" />
-                <div className="my-2 flex flex-col items-center gap-1.5">
-                  {phase === 'reveal' && winner === 'tie' ? (
-                    <div className="w-9 h-9 rounded-full bg-yellow-500/10 border-2 border-yellow-400 flex items-center justify-center">
-                      <Minus className="w-4 h-4 text-yellow-500" />
-                    </div>
-                  ) : phase === 'reveal' && winner ? (
-                    <div className="w-9 h-9 rounded-full bg-green-500/10 border-2 border-green-400 flex items-center justify-center">
-                      <ChevronUp className={`w-5 h-5 text-green-500 ${winner === 'B' ? 'rotate-180' : ''}`} />
-                    </div>
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-black text-gray-400">VS</div>
-                  )}
-                  {phase === 'reveal' && (
-                    <div className="text-center mt-1">
-                      <div className="text-[9px] text-gray-400">diff</div>
-                      <div className="text-xs font-bold text-gray-500 tabular-nums">{ratingDiff}</div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 w-px bg-gray-200 dark:bg-gray-700" />
+            {/* VS divider */}
+            <div className="flex flex-col items-center justify-center flex-shrink-0 gap-2">
+              <div className="flex-1 w-px bg-gray-200 dark:bg-gray-700" />
+              <div>
+                {phase === 'reveal' && winner === 'tie' ? (
+                  <div className="w-10 h-10 rounded-full bg-yellow-500/10 border-2 border-yellow-400 flex items-center justify-center">
+                    <Minus className="w-5 h-5 text-yellow-500" />
+                  </div>
+                ) : phase === 'reveal' && winner ? (
+                  <div className="w-10 h-10 rounded-full bg-green-500/10 border-2 border-green-400 flex items-center justify-center">
+                    <ChevronUp className={`w-5 h-5 text-green-500 transition-transform ${winner === 'B' ? 'rotate-180' : ''}`} />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-black text-gray-400 shadow-sm">
+                    VS
+                  </div>
+                )}
               </div>
-
-              <MovieCard movie={pair.movieB} side="B" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
+              <div className="flex-1 w-px bg-gray-200 dark:bg-gray-700" />
             </div>
 
-            {phase === 'reveal' && lives <= 0 && (
-              <div className="flex-shrink-0 text-center pb-1 text-sm text-gray-400">Calcolo risultato…</div>
-            )}
+            <MovieCard movie={pair.movieB} side="B" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
           </div>
         )}
 
-        {/* ── Reveal overlay — centered modal with blurred backdrop ── */}
-        {phase === 'reveal' && lives > 0 && (
+        {/* ── Reveal overlay ── */}
+        {phase === 'reveal' && lives > 0 && pair && (
           <div
-            className="absolute inset-0 z-20 flex items-center justify-center"
-            style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.22)' }}
+            className="absolute inset-0 z-20 flex items-end justify-center pb-8"
+            style={{ backdropFilter: 'blur(3px)', backgroundColor: 'rgba(0,0,0,0.3)' }}
           >
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl px-10 py-8 text-center space-y-4 mx-4 w-full max-w-xs">
-              <div className="text-5xl">
-                {winner === 'tie' ? '🟡' : winner === selected ? '✅' : '❌'}
-              </div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl px-8 py-6 text-center space-y-4 mx-4 w-full max-w-sm">
+              {/* Outcome */}
               <div className={`text-lg font-bold ${
-                winner === 'tie' ? 'text-yellow-500' : winner === selected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                winner === 'tie' ? 'text-yellow-500' :
+                winner === selected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
+                <span className="text-2xl block mb-0.5">
+                  {winner === 'tie' ? '🟡' : winner === selected ? '✅' : '❌'}
+                </span>
                 {revealMsg()}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Differenza di voto:{' '}
-                <strong className="text-gray-700 dark:text-gray-300 tabular-nums">{ratingDiff}</strong>
+
+              {/* Both ratings */}
+              <div className="flex items-center justify-center gap-6 py-1">
+                <div className="text-center">
+                  <p className="text-xs text-gray-400 mb-1 max-w-[90px] truncate">{pair.movieA.title}</p>
+                  <p className={`text-3xl font-black tabular-nums ${ratingColor(pair.movieA.rating)}`}>
+                    {pair.movieA.rating.toFixed(1)}
+                  </p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                <div className="text-center">
+                  <p className="text-xs text-gray-400 mb-1 max-w-[90px] truncate">{pair.movieB.title}</p>
+                  <p className={`text-3xl font-black tabular-nums ${ratingColor(pair.movieB.rating)}`}>
+                    {pair.movieB.rating.toFixed(1)}
+                  </p>
+                </div>
               </div>
+
               <button
                 onClick={handleNext}
                 disabled={advancing}
@@ -336,7 +334,7 @@ export default function HigherOrLowerPage() {
 
         {/* GAME OVER */}
         {phase === 'gameover' && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center space-y-5 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center space-y-5 w-full max-w-md shadow-sm">
             <div className="text-5xl">
               {score >= 15 ? '🏆' : score >= 10 ? '🌟' : score >= 5 ? '🎬' : '💀'}
             </div>
