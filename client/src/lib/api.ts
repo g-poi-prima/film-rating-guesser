@@ -1,20 +1,44 @@
 import axios from 'axios';
 import type { User, RandomMovie, GuessResult, Game, RankingEntry, AdminUser, MatchHistory, FriendUser, FriendRequest, FriendStatusResult, LobbyPublic, UserProfile, LobbyHistoryEntry, MoviePair } from '../types';
+import { ensureInit, encryptPayload, decryptPayload, getSessionId } from './crypto';
 
 const api = axios.create({
   baseURL: '/api',
 });
 
-api.interceptors.request.use((config) => {
+// ── Request interceptor: attach auth token + encrypt body ────────────────────
+api.interceptors.request.use(async (config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Encrypt body for mutating requests
+  const method = config.method?.toUpperCase();
+  if ((method === 'POST' || method === 'PUT' || method === 'PATCH') && config.data !== undefined) {
+    await ensureInit();
+    const sessionId = getSessionId();
+    if (sessionId) {
+      config.headers['X-Session-Id'] = sessionId;
+      config.data = await encryptPayload(config.data);
+    }
   }
+
+  // Attach session ID on all requests so the server can encrypt responses
+  if (!config.headers['X-Session-Id']) {
+    const sessionId = getSessionId();
+    if (sessionId) config.headers['X-Session-Id'] = sessionId;
+  }
+
   return config;
 });
 
+// ── Response interceptor: decrypt body + handle 401 ─────────────────────────
 api.interceptors.response.use(
-  (res) => res,
+  async (res) => {
+    if (res.data && res.data.encrypted === true) {
+      res.data = await decryptPayload(res.data);
+    }
+    return res;
+  },
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token');
