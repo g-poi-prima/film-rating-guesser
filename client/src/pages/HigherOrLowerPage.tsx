@@ -144,7 +144,13 @@ export default function HigherOrLowerPage() {
               <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center"><ChevronDown className="w-7 h-7 text-red-500 dark:text-red-400" /></div>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Quale film ha il voto più alto?</h2>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Higher or Lower</h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-400/30">
+                  Beta
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Quale film ha il voto più alto?</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Hai <strong className="text-gray-900 dark:text-white">3 vite</strong>. Sbagli → una vita in meno.</p>
             </div>
             <div className="inline-flex rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
