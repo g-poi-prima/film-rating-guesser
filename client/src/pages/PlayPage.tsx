@@ -1,11 +1,52 @@
 import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { getRandomMovie, submitGuess } from '../lib/api';
 import type { RandomMovie, GuessResult } from '../types/index';
 import { useTheme } from '../context/ThemeContext';
 import PlayLateShow from './play/PlayLateShow';
 import PlayVerita from './play/PlayVerita';
 import PlayOverride from './play/PlayOverride';
-import { Film, Star, RefreshCw, PlayCircle, Flame, Shuffle } from 'lucide-react';
+import { Film, Star, RefreshCw, PlayCircle, Flame, Shuffle, ChevronUp, ChevronDown } from 'lucide-react';
+
+// ── Game mode selector ────────────────────────────────────────────────────────
+function GameModePicker() {
+  return (
+    <div className="grid grid-cols-2 gap-3 mb-8">
+      {/* Normal game — active */}
+      <div className="relative flex flex-col gap-2 rounded-2xl border-2 border-primary bg-primary/5 dark:bg-primary/10 p-5 cursor-default">
+        <div className="flex items-center gap-2">
+          <Film className="w-5 h-5 text-primary" />
+          <span className="font-bold text-sm text-primary">Film Rating</span>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">
+          Guarda il film e indovina il suo voto TMDB.
+        </p>
+      </div>
+
+      {/* Higher or Lower — beta */}
+      <Link
+        to="/higher-lower"
+        className="relative flex flex-col gap-2 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all group"
+      >
+        <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-600 dark:text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded-full">
+          Beta
+        </span>
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-1">
+            <ChevronUp className="w-4 h-4 text-green-500" />
+            <ChevronDown className="w-4 h-4 text-red-500" />
+          </div>
+          <span className="font-bold text-sm text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">
+            Higher or Lower
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">
+          Quale dei due film ha il voto più alto?
+        </p>
+      </Link>
+    </div>
+  );
+}
 
 type MovieMode = 'popular' | 'any';
 
@@ -81,6 +122,8 @@ export default function PlayPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <GameModePicker />
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Film className="w-6 h-6 text-primary" />
