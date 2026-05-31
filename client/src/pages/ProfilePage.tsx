@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getProfile, updateProfile } from '../lib/api';
 import type { UserProfile } from '../types';
-import { User, Save, Mail, Key, Gamepad2, Star, Swords, Users, Trophy, TrendingUp } from 'lucide-react';
+import { User, Save, Mail, Key, Gamepad2, Star, Swords, Users, Trophy, TrendingUp, ImageIcon, X } from 'lucide-react';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -19,6 +20,7 @@ export default function ProfilePage() {
         setProfile(data);
         setUsername(data.username);
         setEmail(data.email);
+        setAvatar(data.avatar ?? '');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -29,10 +31,11 @@ export default function ProfilePage() {
     setMessage('');
     setSaving(true);
     try {
-      const data: { username?: string; email?: string; password?: string } = {};
+      const data: { username?: string; email?: string; password?: string; avatar?: string } = {};
       if (username !== profile?.username) data.username = username;
       if (email !== profile?.email) data.email = email;
       if (password) data.password = password;
+      if (avatar !== (profile?.avatar ?? '')) data.avatar = avatar;
 
       if (Object.keys(data).length === 0) {
         setMessage('Nessuna modifica da salvare');
@@ -45,6 +48,7 @@ export default function ProfilePage() {
       setMessage('Profilo aggiornato con successo!');
       const updated = await getProfile();
       setProfile(updated);
+      setAvatar(updated.avatar ?? '');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error || 'Errore durante il salvataggio';
       setError(msg);
@@ -143,6 +147,39 @@ export default function ProfilePage() {
           {/* ── Edit form ──────────────────────────────────────────────────── */}
           <form onSubmit={handleSave} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 space-y-4">
             <h2 className="font-semibold text-gray-700 dark:text-gray-300">Modifica dati</h2>
+
+            {/* ── Avatar ──────────────────────────────────────────────────── */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <ImageIcon className="w-3.5 h-3.5" /> Avatar
+              </label>
+              <div className="flex items-center gap-3">
+                {/* Preview */}
+                <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-primary/10 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                  {avatar ? (
+                    <img src={avatar} alt="avatar" className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <span className="text-xl font-bold text-primary">{profile?.username?.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <input
+                    type="url"
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                    placeholder="https://esempio.com/immagine.jpg"
+                    className="field w-full"
+                  />
+                  {avatar && (
+                    <button type="button" onClick={() => setAvatar('')}
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                      <X className="w-3 h-3" /> Rimuovi avatar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {message && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/40 text-green-700 dark:text-green-400 text-sm p-3 rounded-xl">
