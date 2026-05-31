@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { useLobby } from '../context/LobbyContext';
 import { getOpenLobbies } from '../lib/api';
 import type { LobbyPublic } from '../types';
 import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle } from 'lucide-react';
@@ -9,7 +9,7 @@ import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle } from 'lucide-react'
 export default function LobbiesPage() {
   const { socket } = useSocket();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { createLobby: ctxCreate, joinLobby: ctxJoin, phase, errorMsg } = useLobby();
   const [lobbies, setLobbies] = useState<LobbyPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -20,7 +20,10 @@ export default function LobbiesPage() {
     filmMode: 'popular' as 'popular' | 'any',
   });
   const [joinCode, setJoinCode] = useState('');
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
+
+  // Show context errors (e.g. lobby not found) in the page
+  const error = errorMsg || localError;
 
   const load = () => {
     setLoading(true);
@@ -31,42 +34,33 @@ export default function LobbiesPage() {
 
   useEffect(() => { load(); }, []);
 
-  // Listen for lobby:state after create/join to navigate in
+  // Refresh list when socket reconnects
   useEffect(() => {
     if (!socket) return;
-
-    const onState = (data: { code: string }) => {
-      navigate(`/lobby/${data.code}`);
-    };
-    const onError = (data: { message: string }) => {
-      setError(data.message);
-    };
-
-    socket.on('lobby:state', onState);
-    socket.on('lobby:error', onError);
-    return () => {
-      socket.off('lobby:state', onState);
-      socket.off('lobby:error', onError);
-    };
-  }, [socket, navigate]);
+    socket.on('lobby:list', load);
+    return () => { socket.off('lobby:list', load); };
+  }, [socket]);
 
   const createLobby = () => {
-    if (!form.name.trim()) { setError('Inserisci un nome per la lobby'); return; }
-    setError('');
-    socket?.emit('lobby:create', { name: form.name.trim(), mode: form.mode, totalRounds: form.totalRounds, filmMode: form.filmMode });
+    if (!form.name.trim()) { setLocalError('Inserisci un nome per la lobby'); return; }
+    setLocalError('');
+    // LobbyContext handles navigation after lobby:state is received
+    ctxCreate({ name: form.name.trim(), mode: form.mode, totalRounds: form.totalRounds, filmMode: form.filmMode });
   };
 
   const joinByCode = () => {
     const code = joinCode.trim().toUpperCase();
-    if (!code) { setError('Inserisci un codice lobby'); return; }
-    setError('');
-    socket?.emit('lobby:join', { code });
+    if (!code) { setLocalError('Inserisci un codice lobby'); return; }
+    setLocalError('');
+    ctxJoin(code);
   };
 
   const joinLobby = (code: string) => {
-    setError('');
-    socket?.emit('lobby:join', { code });
+    setLocalError('');
+    ctxJoin(code);
   };
+
+  void phase; // used by LobbyContext for state tracking
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -85,7 +79,7 @@ export default function LobbiesPage() {
             <RefreshCw className="w-4 h-4 text-gray-500" />
           </button>
           <button
-            onClick={() => { setShowCreate((v) => !v); setError(''); }}
+            onClick={() => { setShowCreate((v) => !v); setLocalError(''); }}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             {showCreate ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
