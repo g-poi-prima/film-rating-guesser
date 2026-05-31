@@ -10,9 +10,9 @@ type Winner = 'A' | 'B' | 'tie';
 const MAX_LIVES = 3;
 
 function scoreColor(s: number) {
-  if (s >= 10) return 'text-purple-400';
-  if (s >= 7)  return 'text-green-400';
-  if (s >= 4)  return 'text-yellow-400';
+  if (s >= 10) return 'text-purple-500 dark:text-purple-400';
+  if (s >= 7)  return 'text-green-500  dark:text-green-400';
+  if (s >= 4)  return 'text-yellow-500 dark:text-yellow-400';
   return 'text-primary';
 }
 
@@ -32,7 +32,7 @@ function MovieCard({
     <div
       onClick={() => phase === 'playing' && onPick(side)}
       className={`
-        relative flex-1 overflow-hidden bg-black select-none
+        relative flex-1 overflow-hidden bg-gray-200 dark:bg-black select-none
         transition-[filter] duration-300
         ${phase === 'playing' ? 'cursor-pointer' : ''}
         ${isRevealed && !isSelected && !isWinner ? 'brightness-75' : ''}
@@ -43,11 +43,12 @@ function MovieCard({
           className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 ${phase === 'playing' ? 'hover:scale-105' : ''}`}
           draggable={false} />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-          <Film className="w-20 h-20 text-gray-700" />
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-900">
+          <Film className="w-20 h-20 text-gray-400 dark:text-gray-700" />
         </div>
       )}
 
+      {/* Gradient always dark — readability over poster */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 pointer-events-none" />
 
       {isRevealed && (
@@ -112,41 +113,44 @@ export default function HigherOrLowerPage() {
   const handleNext = () => { if (advancing) return; setAdvancing(true); loadPair(); };
 
   return (
-    <div className="flex flex-col bg-black" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="flex flex-col bg-gray-100 dark:bg-black" style={{ height: 'calc(100vh - 64px)' }}>
 
+      {/* HUD */}
       {(phase === 'playing' || phase === 'reveal') && (
         <div className="absolute inset-x-0 z-30 flex items-center justify-between px-5 py-3 pointer-events-none" style={{ top: 64 }}>
           <div className="flex gap-1.5">
             {Array.from({ length: MAX_LIVES }).map((_, i) => (
-              <Heart key={i} className={`w-6 h-6 drop-shadow transition-all ${i < lives ? 'text-red-500 fill-red-500' : 'text-white/25'}`} />
+              <Heart key={i} className={`w-6 h-6 drop-shadow transition-all ${i < lives ? 'text-red-500 fill-red-500' : 'text-gray-400/50 dark:text-white/25'}`} />
             ))}
           </div>
-          <div className="bg-black/50 backdrop-blur-sm text-white rounded-xl px-4 py-1 font-black text-xl tabular-nums min-w-[2.5rem] text-center border border-white/10 shadow">{score}</div>
+          <div className="bg-white/80 dark:bg-black/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-xl px-4 py-1 font-black text-xl tabular-nums min-w-[2.5rem] text-center border border-gray-200 dark:border-white/10 shadow">{score}</div>
         </div>
       )}
 
+      {/* Error */}
       {error && (
         <div className="absolute inset-x-0 z-40 flex justify-center px-4 pointer-events-none" style={{ top: 110 }}>
-          <div className="bg-red-900/90 backdrop-blur-sm border border-red-500/30 text-red-200 text-sm px-4 py-2.5 rounded-xl shadow-xl">{error}</div>
+          <div className="bg-red-50 dark:bg-red-900/90 backdrop-blur-sm border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-200 text-sm px-4 py-2.5 rounded-xl shadow-xl">{error}</div>
         </div>
       )}
 
+      {/* START */}
       {phase === 'start' && (
         <div className="flex-1 flex items-center justify-center px-4">
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-10 text-center space-y-6 w-full max-w-md shadow-2xl">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/10 p-10 text-center space-y-6 w-full max-w-md shadow-lg dark:shadow-2xl">
             <div className="flex items-center justify-center gap-3">
-              <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center"><ChevronUp className="w-7 h-7 text-green-400" /></div>
-              <span className="font-black text-xl text-gray-500">VS</span>
-              <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center"><ChevronDown className="w-7 h-7 text-red-400" /></div>
+              <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center"><ChevronUp className="w-7 h-7 text-green-500 dark:text-green-400" /></div>
+              <span className="font-black text-xl text-gray-400">VS</span>
+              <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center"><ChevronDown className="w-7 h-7 text-red-500 dark:text-red-400" /></div>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white mb-2">Quale film ha il voto più alto?</h2>
-              <p className="text-sm text-gray-400">Hai <strong className="text-white">3 vite</strong>. Sbagli → una vita in meno.</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Quale film ha il voto più alto?</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Hai <strong className="text-gray-900 dark:text-white">3 vite</strong>. Sbagli → una vita in meno.</p>
             </div>
-            <div className="inline-flex rounded-xl border border-white/10 overflow-hidden">
+            <div className="inline-flex rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
               {(['popular', 'any'] as const).map((m, i) => (
                 <button key={m} onClick={() => setMovieMode(m)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${i > 0 ? 'border-l border-white/10' : ''} ${movieMode === m ? 'bg-primary text-white' : 'text-gray-400 hover:bg-white/5'}`}>
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${i > 0 ? 'border-l border-gray-200 dark:border-white/10' : ''} ${movieMode === m ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
                   {m === 'popular' ? <><Flame className="w-4 h-4" />Famosi</> : <><Shuffle className="w-4 h-4" />Casuali</>}
                 </button>
               ))}
@@ -158,22 +162,24 @@ export default function HigherOrLowerPage() {
         </div>
       )}
 
+      {/* LOADING */}
       {phase === 'loading' && (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
         </div>
       )}
 
+      {/* PLAYING / REVEAL */}
       {(phase === 'playing' || phase === 'reveal') && pair && (
         <div className="flex-1 relative flex min-h-0">
           <MovieCard movie={pair.movieA} side="A" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
-          <div className="w-px bg-white/10 flex-shrink-0 z-10" />
+          <div className="w-px bg-gray-300 dark:bg-white/10 flex-shrink-0 z-10" />
           <MovieCard movie={pair.movieB} side="B" phase={phase} selected={selected} winner={winner} onPick={handlePick} />
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
             {phase === 'playing' && (
-              <div className="w-14 h-14 rounded-full bg-gray-950/90 backdrop-blur-sm border-2 border-white/20 shadow-2xl flex items-center justify-center pointer-events-none">
-                <span className="text-white font-black text-sm tracking-wide">VS</span>
+              <div className="w-14 h-14 rounded-full bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm border-2 border-gray-200 dark:border-white/20 shadow-2xl flex items-center justify-center pointer-events-none">
+                <span className="text-gray-700 dark:text-white font-black text-sm tracking-wide">VS</span>
               </div>
             )}
             {phase === 'reveal' && (
@@ -181,11 +187,11 @@ export default function HigherOrLowerPage() {
                 <div className={`w-14 h-14 rounded-full border-4 shadow-2xl flex items-center justify-center text-white font-black text-2xl pointer-events-none ${winner === 'tie' ? 'bg-yellow-500 border-yellow-300' : winner === selected ? 'bg-green-500 border-green-300' : 'bg-red-500 border-red-300'}`}>
                   {winner === 'tie' ? '=' : winner === selected ? '✓' : '✗'}
                 </div>
-                <span className={`text-[11px] font-bold uppercase tracking-widest drop-shadow pointer-events-none ${winner === 'tie' ? 'text-yellow-400' : winner === selected ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-[11px] font-bold uppercase tracking-widest drop-shadow pointer-events-none ${winner === 'tie' ? 'text-yellow-600 dark:text-yellow-400' : winner === selected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {winner === 'tie' ? 'Pareggio' : winner === selected ? 'Corretto' : 'Sbagliato'}
                 </span>
                 <button onClick={handleNext} disabled={advancing}
-                  className="mt-1 bg-white hover:bg-gray-100 active:scale-95 text-gray-900 font-bold px-5 py-2 rounded-full shadow-2xl transition-all text-sm whitespace-nowrap disabled:opacity-50">
+                  className="mt-1 bg-white hover:bg-gray-100 active:scale-95 text-gray-900 font-bold px-5 py-2 rounded-full shadow-2xl transition-all text-sm whitespace-nowrap disabled:opacity-50 border border-gray-200 dark:border-transparent">
                   {advancing ? '…' : 'Avanti →'}
                 </button>
               </>
@@ -194,23 +200,24 @@ export default function HigherOrLowerPage() {
         </div>
       )}
 
+      {/* GAME OVER */}
       {phase === 'gameover' && (
         <div className="flex-1 flex items-center justify-center px-4">
-          <div className="bg-gray-900 rounded-2xl border border-white/10 p-10 text-center space-y-5 w-full max-w-md shadow-2xl">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/10 p-10 text-center space-y-5 w-full max-w-md shadow-lg dark:shadow-2xl">
             <div className="text-5xl">{score >= 15 ? '🏆' : score >= 10 ? '🌟' : score >= 5 ? '🎬' : '💀'}</div>
             <div>
-              <p className="text-sm font-medium text-gray-400 mb-1">Punteggio finale</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Punteggio finale</p>
               <p className={`text-8xl font-black tabular-nums ${scoreColor(score)}`}>{score}</p>
-              <p className="text-sm text-gray-500 mt-1">risposte esatte</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">risposte esatte</p>
             </div>
-            <p className="text-sm text-gray-400 bg-white/5 rounded-xl px-5 py-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-xl px-5 py-3">
               {score >= 15 ? 'Sei un critico cinematografico nato!' : score >= 10 ? 'Ottima conoscenza del cinema!' : score >= 5 ? 'Puoi fare di meglio!' : score >= 1 ? "Ci vuole un po' di pratica!" : 'Meglio la prossima volta!'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button onClick={handleStart} className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-8 py-3 rounded-xl transition-colors">
                 <ChevronUp className="w-5 h-5" /> Riprova
               </button>
-              <button onClick={() => setPhase('start')} className="inline-flex items-center justify-center gap-2 border border-white/10 text-gray-400 hover:bg-white/5 font-medium px-6 py-3 rounded-xl transition-colors">
+              <button onClick={() => setPhase('start')} className="inline-flex items-center justify-center gap-2 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 font-medium px-6 py-3 rounded-xl transition-colors">
                 Menu
               </button>
             </div>
