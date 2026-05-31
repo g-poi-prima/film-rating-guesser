@@ -127,6 +127,7 @@ interface ServerToClientEvents {
   'lobby:round_result': (data: LobbyRoundResultPayload) => void;
   'lobby:finished': (data: LobbyFinishedPayload) => void;
   'lobby:list': (lobbies: LobbyStatePayload[]) => void;
+  'friend:update': () => void;
 }
 
 interface ClientToServerEvents {

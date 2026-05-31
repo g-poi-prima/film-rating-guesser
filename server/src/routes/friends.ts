@@ -3,11 +3,52 @@ import prisma from "@/lib/prisma";
 import { authenticate } from "@/middleware/auth";
 import { asyncHandler } from "@/middleware/asyncHandler";
 import type { AuthRequest } from "@/middleware/auth";
+import { getIO } from "@/lib/socket";
+import { onlineUsers } from "@/lib/socket/store";
+
+function notifyFriendUpdate(userId: number): void {
+  const io = getIO();
+  const entry = onlineUsers.get(userId);
+  if (io && entry) io.to(entry.socketId).emit("friend:update");
+}
 
 const router = Router();
 router.use(authenticate);
 
 const friendSelect = { id: true, username: true, avatar: true } as const;
+
+// ── Search users (for adding friends) ────────────────────────────────────────
+
+router.get(
+  "/search",
+  asyncHandler(async (req: AuthRequest, res) => {
+    const q = ((req.query.q as string) ?? "").trim();
+    if (q.length === 0) { res.json([]); return; }
+
+    const myId = req.user!.id;
+    const isId = /^\d+$/.test(q);
+
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { id: { not: myId } },
+          isId
+            ? { id: parseInt(q) }
+            : {
+                OR: [
+                  { username: { contains: q, mode: "insensitive" } },
+                  { email:    { equals:   q, mode: "insensitive" } },
+                ],
+              },
+        ],
+      },
+      select: { id: true, username: true, avatar: true },
+      take: 10,
+    });
+
+    res.json(users);
+  })
+);
 
 // ── List accepted friends ─────────────────────────────────────────────────────
 
@@ -86,6 +127,7 @@ router.post(
       data: { senderId, receiverId },
       include: { receiver: { select: friendSelect } },
     });
+    notifyFriendUpdate(receiverId);
     res.json(request);
   })
 );
@@ -105,6 +147,7 @@ router.put(
     }
 
     const updated = await prisma.friendRequest.update({ where: { id }, data: { status: "ACCEPTED" } });
+    notifyFriendUpdate(updated.senderId);
     res.json(updated);
   })
 );

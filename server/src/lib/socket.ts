@@ -7,16 +7,20 @@ import { onlineUsers, removeFromQueue, broadcastOnline } from "./socket/store";
 import { registerMatchHandlers, handleMatchDisconnect } from "./socket/handlers/match";
 import { registerChatHandlers } from "./socket/handlers/chat";
 import { registerLobbyHandlers, handleLobbyDisconnect } from "./socket/handlers/lobby";
-import type { ServerToClientEvents, ClientToServerEvents, UserData } from "./socket/types";
+import type { AppServer, ServerToClientEvents, ClientToServerEvents, UserData } from "./socket/types";
 
 // Cache once at module load
 const JWT_SECRET = getEnv("JWT_SECRET");
+
+let _io: AppServer | null = null;
+export function getIO(): AppServer | null { return _io; }
 
 export function setupSocket(httpServer: HTTPServer): void {
   const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, { user: UserData }>(
     httpServer,
     { cors: { origin: "*" } }
   );
+  _io = io;
 
   // ── Auth middleware ─────────────────────────────────────────────────────────
 

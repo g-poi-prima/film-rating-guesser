@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFriends } from '../context/FriendsContext';
 import { useSocket } from '../context/SocketContext';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserMinus, Check, X, MessageCircle, Loader2, UserCheck } from 'lucide-react';
+import { searchUsers, sendFriendRequest } from '../lib/api';
+import { Users, UserMinus, Check, X, MessageCircle, Loader2, UserCheck, UserPlus, Search } from 'lucide-react';
+import UserAvatar from '../components/UserAvatar';
 
 export default function FriendsPage() {
   const { friends, friendIds, pendingRequests, loading, accept, remove, refresh } = useFriends();
@@ -10,7 +12,41 @@ export default function FriendsPage() {
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
+  // ── Add-friend search ──────────────────────────────────────────────────────
+  const [addQuery, setAddQuery]           = useState('');
+  const [addResults, setAddResults]       = useState<{ id: number; username: string; avatar: string | null }[]>([]);
+  const [addSearching, setAddSearching]   = useState(false);
+  const [addSent, setAddSent]             = useState<Set<number>>(new Set());
+  const addDebounce                       = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (addDebounce.current) clearTimeout(addDebounce.current);
+    if (addQuery.trim().length === 0) { setAddResults([]); return; }
+    addDebounce.current = setTimeout(async () => {
+      setAddSearching(true);
+      try { setAddResults(await searchUsers(addQuery.trim())); }
+      catch { setAddResults([]); }
+      finally { setAddSearching(false); }
+    }, 350);
+    return () => { if (addDebounce.current) clearTimeout(addDebounce.current); };
+  }, [addQuery]);
+
+  const handleSendRequest = async (userId: number) => {
+    setActionLoading(userId);
+    try {
+      await sendFriendRequest(userId);
+      setAddSent((s) => new Set(s).add(userId));
+    } catch { /* already sent or other error */ }
+    finally { setActionLoading(null); }
+  };
+
+  // ── Friends filter ─────────────────────────────────────────────────────────
+  const [filterQuery, setFilterQuery] = useState('');
+
   const onlineIds = new Set(onlineUsers.map((u) => u.id));
+  const filteredFriends = filterQuery.trim()
+    ? friends.filter((f) => f.username.toLowerCase().includes(filterQuery.toLowerCase()))
+    : friends;
 
   const handleAccept = async (requestId: number) => {
     setActionLoading(requestId);
@@ -57,6 +93,54 @@ export default function FriendsPage() {
         </p>
       </div>
 
+      {/* ── Add friend ───────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+          <UserPlus className="w-4 h-4" />
+          Aggiungi amico
+        </h2>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={addQuery}
+            onChange={(e) => setAddQuery(e.target.value)}
+            placeholder="Cerca per username, email o ID…"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          {addSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
+        </div>
+        {addResults.length > 0 && (
+          <div className="mt-2 space-y-1.5">
+            {addResults.map((u) => {
+              const alreadyFriend = friends.some((f) => f.id === u.id);
+              const sent = addSent.has(u.id);
+              return (
+                <div key={u.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-2.5 flex items-center gap-3">
+                  <UserAvatar username={u.username} avatar={u.avatar} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{u.username}</p>
+                    <p className="text-xs text-gray-400">ID {u.id}</p>
+                  </div>
+                  <button
+                    onClick={() => handleSendRequest(u.id)}
+                    disabled={alreadyFriend || sent || actionLoading === u.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50
+                      bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:hover:bg-primary/10 disabled:hover:text-primary"
+                  >
+                    {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
+                    {alreadyFriend ? 'Già amici' : sent ? 'Inviata' : 'Aggiungi'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {addQuery.trim().length > 0 && !addSearching && addResults.length === 0 && (
+          <p className="mt-2 text-sm text-gray-400 text-center py-3">Nessun utente trovato</p>
+        )}
+      </section>
+
       {/* ── Pending requests ──────────────────────────────────────────────── */}
       {pendingRequests.length > 0 && (
         <section>
@@ -70,11 +154,7 @@ export default function FriendsPage() {
                 key={req.id}
                 className="bg-white dark:bg-gray-900 rounded-2xl border border-primary/20 px-4 py-3 flex items-center gap-4"
               >
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary">
-                    {req.sender?.username?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <UserAvatar username={req.sender?.username ?? '?'} avatar={req.sender?.avatar} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 dark:text-white truncate">{req.sender?.username}</p>
                   <p className="text-xs text-gray-400">vuole essere tuo amico</p>
@@ -105,10 +185,24 @@ export default function FriendsPage() {
 
       {/* ── Friends list ──────────────────────────────────────────────────── */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          I tuoi amici ({friends.length})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            I tuoi amici ({friends.length})
+          </h2>
+        </div>
+        {friends.length > 0 && (
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              placeholder="Filtra amici…"
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+        )}
         {friends.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
             <Users className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
@@ -119,7 +213,10 @@ export default function FriendsPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {friends.map((f) => {
+            {filteredFriends.length === 0 && filterQuery && (
+              <p className="text-sm text-gray-400 text-center py-4">Nessun amico trovato per "{filterQuery}"</p>
+            )}
+            {filteredFriends.map((f) => {
               const isOnline = onlineIds.has(f.id);
               return (
                 <div
@@ -127,9 +224,7 @@ export default function FriendsPage() {
                   className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center gap-4 hover:shadow-sm transition-shadow"
                 >
                   <div className="relative flex-shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">{f.username.charAt(0).toUpperCase()}</span>
-                    </div>
+                    <UserAvatar username={f.username} avatar={f.avatar} />
                     {isOnline && (
                       <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
                     )}
@@ -167,7 +262,7 @@ export default function FriendsPage() {
       </section>
 
       <p className="text-xs text-center text-gray-400 dark:text-gray-600">
-        Aggiungi amici dalla <button onClick={() => navigate('/ranking')} className="text-primary hover:underline">Classifica</button>
+        Puoi anche aggiungere amici dalla <button onClick={() => navigate('/ranking')} className="text-primary hover:underline">Classifica</button>
       </p>
     </div>
   );

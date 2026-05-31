@@ -128,6 +128,7 @@ export interface ServerToClientEvents {
   "lobby:round_result": (data: LobbyRoundResultPayload) => void;
   "lobby:finished": (data: LobbyFinishedPayload) => void;
   "lobby:list": (lobbies: LobbyPublicPayload[]) => void;
+  "friend:update": () => void;
 }
 
 export interface ClientToServerEvents {
