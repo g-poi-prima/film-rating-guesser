@@ -3,6 +3,7 @@ import { getRanking, getFriendStatus, sendFriendRequest, acceptFriendRequest, de
 import { useFriends } from '../context/FriendsContext';
 import { useAuth } from '../context/AuthContext';
 import type { RankingEntry, FriendStatusResult } from '../types';
+import UserAvatar from '../components/UserAvatar';
 import { Trophy, Star, Gamepad2, UserPlus, Check, Clock, UserMinus } from 'lucide-react';
 
 const medals = ['🥇', '🥈', '🥉'];
@@ -130,11 +131,7 @@ export default function RankingPage() {
                 </div>
 
                 {/* Avatar */}
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary">
-                    {entry.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <UserAvatar username={entry.username} avatar={entry.avatar} />
 
                 {/* Name + stats */}
                 <div className="flex-1 min-w-0">

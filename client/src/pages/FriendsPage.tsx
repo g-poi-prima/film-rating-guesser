@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { useNavigate } from 'react-router-dom';
 import { searchUsers, sendFriendRequest } from '../lib/api';
 import { Users, UserMinus, Check, X, MessageCircle, Loader2, UserCheck, UserPlus, Search } from 'lucide-react';
+import UserAvatar from '../components/UserAvatar';
 
 export default function FriendsPage() {
   const { friends, friendIds, pendingRequests, loading, accept, remove, refresh } = useFriends();
@@ -116,9 +117,7 @@ export default function FriendsPage() {
               const sent = addSent.has(u.id);
               return (
                 <div key={u.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-2.5 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary">{u.username.charAt(0).toUpperCase()}</span>
-                  </div>
+                  <UserAvatar username={u.username} avatar={u.avatar} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{u.username}</p>
                     <p className="text-xs text-gray-400">ID {u.id}</p>
@@ -155,11 +154,7 @@ export default function FriendsPage() {
                 key={req.id}
                 className="bg-white dark:bg-gray-900 rounded-2xl border border-primary/20 px-4 py-3 flex items-center gap-4"
               >
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-primary">
-                    {req.sender?.username?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <UserAvatar username={req.sender?.username ?? '?'} avatar={req.sender?.avatar} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 dark:text-white truncate">{req.sender?.username}</p>
                   <p className="text-xs text-gray-400">vuole essere tuo amico</p>
@@ -229,9 +224,7 @@ export default function FriendsPage() {
                   className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center gap-4 hover:shadow-sm transition-shadow"
                 >
                   <div className="relative flex-shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">{f.username.charAt(0).toUpperCase()}</span>
-                    </div>
+                    <UserAvatar username={f.username} avatar={f.avatar} />
                     {isOnline && (
                       <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
                     )}
