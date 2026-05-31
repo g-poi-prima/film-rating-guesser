@@ -6,6 +6,8 @@ import { MatchProvider } from './context/MatchContext';
 import { FriendsProvider } from './context/FriendsContext';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import LobbyBanner from './components/LobbyBanner';
+import { LobbyProvider } from './context/LobbyContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PlayPage from './pages/PlayPage';
@@ -28,7 +30,9 @@ function App() {
           <MatchProvider>
             <FriendsProvider>
             <BrowserRouter>
-              <Navbar />
+              <LobbyProvider>
+                <Navbar />
+                <LobbyBanner />
               <main className="min-h-[calc(100vh-4rem)]">
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
@@ -46,6 +50,7 @@ function App() {
                   <Route path="/higher-lower" element={<ProtectedRoute><HigherOrLowerPage /></ProtectedRoute>} />
                 </Routes>
               </main>
+              </LobbyProvider>
             </BrowserRouter>
             </FriendsProvider>
           </MatchProvider>
