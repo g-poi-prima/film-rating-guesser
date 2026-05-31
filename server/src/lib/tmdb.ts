@@ -83,7 +83,6 @@ export async function getRandomMovie(mode: MovieMode = "popular"): Promise<Movie
           params: {
             sort_by: "popularity.desc",
             "vote_count.gte": TMDB_POPULAR_MIN_VOTES,
-            "vote_average.gte": 5.0,
             page,
           },
         });
@@ -96,7 +95,6 @@ export async function getRandomMovie(mode: MovieMode = "popular"): Promise<Movie
             params: {
               sort_by: "popularity.desc",
               "vote_count.gte": TMDB_POPULAR_MIN_VOTES,
-              "vote_average.gte": 5.0,
               page: validPage,
             },
           });

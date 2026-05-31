@@ -146,6 +146,11 @@ export async function getFriendStatus(userId: number): Promise<FriendStatusResul
   return data;
 }
 
+export async function searchUsers(q: string): Promise<{ id: number; username: string; avatar: string | null }[]> {
+  const { data } = await api.get('/friends/search', { params: { q } });
+  return data;
+}
+
 export async function sendFriendRequest(receiverId: number): Promise<FriendRequest> {
   const { data } = await api.post('/friends/request', { receiverId });
   return data;
