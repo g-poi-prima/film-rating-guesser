@@ -19,11 +19,13 @@ import {
   UserCheck,
   Palette,
   Check,
+  Scale,
 } from 'lucide-react';
 import { useState, useEffect, useRef, type RefObject } from 'react';
 
 const links = [
   { to: '/', label: 'Gioca', icon: Film },
+  { to: '/higher-lower', label: 'H/L', icon: Scale },
   { to: '/match', label: '1v1', icon: Swords },
   { to: '/lobbies', label: 'Lobby', icon: Users },
   { to: '/friends', label: 'Amici', icon: UserCheck },
