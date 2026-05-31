@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { useLobby } from '../context/LobbyContext';
 import { getOpenLobbies } from '../lib/api';
 import type { LobbyPublic } from '../types';
-import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle } from 'lucide-react';
+import { Users, Trophy, RefreshCw, Plus, X, Flame, Shuffle, ArrowRight } from 'lucide-react';
 
 export default function LobbiesPage() {
   const { socket } = useSocket();
   const { user } = useAuth();
-  const { createLobby: ctxCreate, joinLobby: ctxJoin, phase, errorMsg } = useLobby();
+  const { createLobby: ctxCreate, joinLobby: ctxJoin, phase, lobbyState, errorMsg } = useLobby();
+  const isInLobby = lobbyState !== null && phase !== 'idle' && phase !== 'error';
   const [lobbies, setLobbies] = useState<LobbyPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -80,7 +82,8 @@ export default function LobbiesPage() {
           </button>
           <button
             onClick={() => { setShowCreate((v) => !v); setLocalError(''); }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
+            disabled={isInLobby}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {showCreate ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {showCreate ? 'Annulla' : 'Crea lobby'}
@@ -88,8 +91,34 @@ export default function LobbiesPage() {
         </div>
       </div>
 
+      {/* Already in lobby banner */}
+      {isInLobby && lobbyState && (
+        <div className="bg-primary/5 border border-primary/20 rounded-2xl px-5 py-4 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+            </span>
+            <div>
+              <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                Sei già in una lobby — <span className="text-primary">{lobbyState.name}</span>
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Esci dalla lobby corrente prima di crearne o unirti a un'altra.
+              </p>
+            </div>
+          </div>
+          <Link
+            to={`/lobby/${lobbyState.code}`}
+            className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline flex-shrink-0 ml-4"
+          >
+            Torna <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
       {/* Create form */}
-      {showCreate && (
+      {showCreate && !isInLobby && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-6 space-y-4">
           <h2 className="font-semibold text-gray-900 dark:text-white">Nuova lobby</h2>
           <div className="space-y-3">
@@ -191,10 +220,12 @@ export default function LobbiesPage() {
             placeholder="Codice lobby (es. ABC123)"
             className="field flex-1"
             maxLength={6}
+            disabled={isInLobby}
           />
           <button
             onClick={joinByCode}
-            className="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors flex-shrink-0"
+            disabled={isInLobby}
+            className="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Unisciti
           </button>
@@ -250,10 +281,10 @@ export default function LobbiesPage() {
               </div>
               <button
                 onClick={() => joinLobby(lobby.code)}
-                disabled={lobby.players.some((p) => p.userId === user?.id)}
+                disabled={isInLobby || lobby.players.some((p) => p.userId === user?.id)}
                 className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
-                {lobby.players.some((p) => p.userId === user?.id) ? 'Sei dentro' : 'Unisciti'}
+                {lobby.players.some((p) => p.userId === user?.id) ? 'Sei dentro' : isInLobby ? 'In lobby' : 'Unisciti'}
               </button>
             </div>
           ))}
