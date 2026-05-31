@@ -16,12 +16,20 @@ import adminRoutes from "@/routes/admin";
 import matchesRoutes from "@/routes/matches";
 import friendsRoutes from "@/routes/friends";
 import lobbiesRoutes from "@/routes/lobbies";
+import cryptoRoutes from "@/routes/crypto";
+import { decryptBody, encryptResponse } from "@/middleware/decrypt";
 
 const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 app.get("/", (_req, res) => res.send("Film Rating Guessr API"));
+
+// ── Key exchange (must be before encrypt/decrypt middleware) ──────────────────
+app.use("/api/crypto", cryptoRoutes);
+
+// ── Transparent payload encryption for all other /api routes ─────────────────
+app.use("/api", encryptResponse, decryptBody);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/games", gamesRoutes);
