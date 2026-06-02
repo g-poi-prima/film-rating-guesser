@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import prisma from "@/lib/prisma";
 import { getRandomMovie } from "@/lib/tmdb";
 import type { FilmMode } from "@/lib/lobbyStore";
@@ -46,6 +47,7 @@ export function registerLobbyHandlers(
       movie: null,
       realRating: 0,
       dbMatchId: dbMatch.id,
+      chatMessages: [],
     });
 
     await socket.join(`lobby:${code}`);
@@ -124,6 +126,25 @@ export function registerLobbyHandlers(
       lobby.status = "WAITING";
       socket.emit("lobby:error", { message: "Errore nel recupero del film" });
     }
+  });
+
+  // ── Chat ────────────────────────────────────────────────────────────────────
+
+  socket.on("lobby:chat", ({ code, text }) => {
+    const key = code.toUpperCase();
+    const lobby = lobbies.get(key);
+    if (!lobby || !text?.trim()) return;
+
+    const msg = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      username: user.username,
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    lobby.chatMessages.push(msg);
+    io.to(`lobby:${key}`).emit("lobby:chat", msg);
   });
 
   // ── Submit rating ───────────────────────────────────────────────────────────

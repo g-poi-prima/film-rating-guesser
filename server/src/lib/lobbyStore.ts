@@ -10,6 +10,14 @@ export interface LobbyPlayer {
   submittedRating: number | null;
 }
 
+export interface LobbyMessage {
+  id: string;
+  userId: number;
+  username: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface LobbyRoom {
   code: string;
   name: string;
@@ -23,6 +31,7 @@ export interface LobbyRoom {
   movie: { id: number; title: string; overview: string; poster: string | null } | null;
   realRating: number;
   dbMatchId: number | null;
+  chatMessages: LobbyMessage[];
 }
 
 export const lobbies = new Map<string, LobbyRoom>();
@@ -51,5 +60,6 @@ export function lobbyToPublic(room: LobbyRoom) {
     status: room.status,
     currentRound: room.currentRound,
     totalRounds: room.totalRounds,
+    chatMessages: room.chatMessages,
   };
 }
